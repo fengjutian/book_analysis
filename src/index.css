@@ -1,42 +1,35 @@
-:root {
-  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
-
-  color-scheme: light;
-  color: #213547;
-  background-color: #ffffff;
-
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+.app {
+  display: flex;
+  font-family: sans-serif;
 }
 
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
+.sidebar {
+  padding: 10px;
+  width: 250px;
 }
 
-body {
-  margin: 0;
-  min-width: 320px;
-  min-height: 100vh;
+.sidebar .header {
+  margin-bottom: 10px;
 }
 
-#root {
-  width: 100vw;
-  height: 100vh;
-  overflow: hidden;
+.doc-item {
+  padding: 5px;
 }
 
-button {
-  font-family: inherit;
-  cursor: pointer;
+.doc-item.active,
+.doc-item:hover {
+  background-color: #f0f0f0;
 }
 
-input,
-textarea {
-  font-family: inherit;
+.top-bar {
+  display: flex;
+  flex-direction: row-reverse;
+}
+
+.top-bar button {
+  margin: auto 2px;
+}
+
+.main-content {
+  flex: 1;
 }
