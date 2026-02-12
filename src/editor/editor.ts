@@ -2,7 +2,7 @@ import { AffineEditorContainer } from '@blocksuite/presets';
 import { Doc, Schema } from '@blocksuite/store';
 import { DocCollection } from '@blocksuite/store';
 import { AffineSchemas } from '@blocksuite/blocks';
-import '@blocksuite/presets/themes/affine.css';
+import '@blocksuite/editor/themes/affine.css';
 
 export interface EditorContextType {
   editor: AffineEditorContainer | null;
