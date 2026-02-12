@@ -26,7 +26,7 @@ export function initDatabase() {
 export interface Markdown {
   id: number;
   title: string;
-  content: string;
+  content: any; // BlockSuite 文档数据格式
   created_at: string;
   updated_at: string;
 }
@@ -38,7 +38,12 @@ export function getAllMarkdowns(): Promise<Markdown[]> {
       if (err) {
         reject(err);
       } else {
-        resolve(rows as Markdown[]);
+        // 解析 content 字段为对象
+        const markdowns = (rows as any[]).map(row => ({
+          ...row,
+          content: typeof row.content === 'string' ? JSON.parse(row.content) : row.content
+        }));
+        resolve(markdowns as Markdown[]);
       }
     });
   });
@@ -50,19 +55,28 @@ export function getMarkdownById(id: number): Promise<Markdown | undefined> {
     db.get('SELECT * FROM markdowns WHERE id = ?', [id], (err, row) => {
       if (err) {
         reject(err);
+      } else if (row) {
+        // 解析 content 字段为对象
+        const markdown = {
+          ...(row as any),
+          content: typeof row.content === 'string' ? JSON.parse(row.content) : row.content
+        };
+        resolve(markdown as Markdown);
       } else {
-        resolve(row as Markdown | undefined);
+        resolve(undefined);
       }
     });
   });
 }
 
 // 创建 Markdown 文件
-export function createMarkdown(title: string, content: string): Promise<Markdown> {
+export function createMarkdown(title: string, content: any): Promise<Markdown> {
   return new Promise((resolve, reject) => {
+    // 将 content 转换为 JSON 字符串
+    const contentJson = typeof content === 'string' ? content : JSON.stringify(content);
     db.run(
       'INSERT INTO markdowns (title, content) VALUES (?, ?)',
-      [title, content],
+      [title, contentJson],
       function(err) {
         if (err) {
           reject(err);
@@ -70,8 +84,15 @@ export function createMarkdown(title: string, content: string): Promise<Markdown
           db.get('SELECT * FROM markdowns WHERE id = ?', [this.lastID], (err, row) => {
             if (err) {
               reject(err);
+            } else if (row) {
+              // 解析 content 字段为对象
+              const markdown = {
+                ...(row as any),
+                content: typeof row.content === 'string' ? JSON.parse(row.content) : row.content
+              };
+              resolve(markdown as Markdown);
             } else {
-              resolve(row as Markdown);
+              reject(new Error('Failed to retrieve created markdown'));
             }
           });
         }
@@ -81,11 +102,13 @@ export function createMarkdown(title: string, content: string): Promise<Markdown
 }
 
 // 更新 Markdown 文件
-export function updateMarkdown(id: number, title: string, content: string): Promise<Markdown | undefined> {
+export function updateMarkdown(id: number, title: string, content: any): Promise<Markdown | undefined> {
   return new Promise((resolve, reject) => {
+    // 将 content 转换为 JSON 字符串
+    const contentJson = typeof content === 'string' ? content : JSON.stringify(content);
     db.run(
       'UPDATE markdowns SET title = ?, content = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
-      [title, content, id],
+      [title, contentJson, id],
       function(err) {
         if (err) {
           reject(err);
@@ -93,8 +116,15 @@ export function updateMarkdown(id: number, title: string, content: string): Prom
           db.get('SELECT * FROM markdowns WHERE id = ?', [id], (err, row) => {
             if (err) {
               reject(err);
+            } else if (row) {
+              // 解析 content 字段为对象
+              const markdown = {
+                ...(row as any),
+                content: typeof row.content === 'string' ? JSON.parse(row.content) : row.content
+              };
+              resolve(markdown as Markdown);
             } else {
-              resolve(row as Markdown | undefined);
+              resolve(undefined);
             }
           });
         }

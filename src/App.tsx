@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react'
-import ReactMarkdown from 'react-markdown'
+import { useState, useEffect, useRef } from 'react'
+import { Workspace, Page, Editor } from '@blocksuite/editor'
 import './App.css'
 
 // 类型定义
@@ -27,8 +27,13 @@ declare global {
 function App() {
   const [markdowns, setMarkdowns] = useState<Markdown[]>([]);
   const [selectedMarkdown, setSelectedMarkdown] = useState<Markdown | null>(null);
-  const [editingContent, setEditingContent] = useState('');
   const [newTitle, setNewTitle] = useState('');
+  
+  // BlockSuite 相关引用
+  const workspaceRef = useRef<Workspace | null>(null);
+  const pageRef = useRef<Page | null>(null);
+  const editorRef = useRef<Editor | null>(null);
+  const editorContainerRef = useRef<HTMLDivElement>(null);
 
   // 加载所有 Markdown 文件
   const loadMarkdowns = async () => {
@@ -46,7 +51,37 @@ function App() {
       const data = await window.api.getMarkdownById(id);
       if (data) {
         setSelectedMarkdown(data);
-        setEditingContent(data.content);
+        
+        // 初始化 BlockSuite 编辑器
+        if (editorContainerRef.current) {
+          // 清空容器
+          editorContainerRef.current.innerHTML = '';
+          
+          // 创建工作区
+          const workspace = new Workspace();
+          workspaceRef.current = workspace;
+          
+          // 创建页面
+          const page = workspace.createPage({ title: data.title });
+          pageRef.current = page;
+          
+          // 加载内容
+          if (data.content) {
+            // 这里需要根据 BlockSuite 的数据格式来加载内容
+            // 暂时使用简单的文本块作为示例
+            const doc = page.getDoc();
+            if (doc) {
+              doc.load({ blocks: [{ type: 'text', content: data.content }] });
+            }
+          }
+          
+          // 创建编辑器
+          const editor = new Editor({
+            container: editorContainerRef.current,
+            page,
+          });
+          editorRef.current = editor;
+        }
       }
     } catch (error) {
       console.error('Failed to load markdown:', error);
@@ -70,12 +105,24 @@ function App() {
 
   // 保存 Markdown 文件
   const saveMarkdown = async () => {
-    if (!selectedMarkdown) return;
+    if (!selectedMarkdown || !pageRef.current) return;
     try {
+      // 从 BlockSuite 编辑器中获取内容
+      const doc = pageRef.current.getDoc();
+      let content = '';
+      if (doc) {
+        // 这里需要根据 BlockSuite 的数据格式来获取内容
+        // 暂时使用简单的文本获取方式作为示例
+        const blocks = doc.getBlocks();
+        if (blocks && blocks.length > 0) {
+          content = blocks[0].content || '';
+        }
+      }
+      
       const updatedMarkdown = await window.api.updateMarkdown(
         selectedMarkdown.id,
         selectedMarkdown.title,
-        editingContent
+        content
       );
       if (updatedMarkdown) {
         setSelectedMarkdown(updatedMarkdown);
@@ -160,15 +207,12 @@ function App() {
               </button>
             </div>
             <div className="editor-content">
-              <textarea
-                value={editingContent}
-                onChange={(e) => setEditingContent(e.target.value)}
-                className="markdown-textarea"
-                placeholder="Write your markdown here..."
-              />
-              <div className="markdown-preview">
-                <ReactMarkdown>{editingContent}</ReactMarkdown>
-              </div>
+              {/* BlockSuite 编辑器容器 */}
+              <div 
+                ref={editorContainerRef} 
+                className="blocksuite-editor"
+                style={{ height: 'calc(100vh - 120px)', border: '1px solid #e0e0e0' }}
+              ></div>
             </div>
           </div>
         ) : (

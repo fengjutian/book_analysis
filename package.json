@@ -2,7 +2,7 @@
   "name": "book_analysis",
   "private": true,
   "version": "0.0.0",
-  "type": "module",
+  "type": "commonjs",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build && electron-builder",
@@ -10,6 +10,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@blocksuite/editor": "^0.10.0",
     "better-sqlite3": "^12.6.2",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",

@@ -3,7 +3,7 @@ Object.defineProperty(exports, Symbol.toStringTag, { value: "Module" });
 const electron = require("electron");
 const node_url = require("node:url");
 const path$1 = require("node:path");
-const Database = require("better-sqlite3");
+const sqlite3 = require("sqlite3");
 const path = require("path");
 var _documentCurrentScript = typeof document !== "undefined" ? document.currentScript : null;
 function _interopNamespaceDefault(e) {
@@ -24,7 +24,7 @@ function _interopNamespaceDefault(e) {
 }
 const path__namespace = /* @__PURE__ */ _interopNamespaceDefault(path);
 const dbPath = path__namespace.join(electron.app.getPath("userData"), "markdown.db");
-const db = new Database(dbPath);
+const db = new sqlite3.Database(dbPath);
 function initDatabase() {
   db.exec(`
     CREATE TABLE IF NOT EXISTS markdowns (
@@ -37,43 +37,118 @@ function initDatabase() {
   `);
 }
 function getAllMarkdowns() {
-  const stmt = db.prepare("SELECT * FROM markdowns ORDER BY updated_at DESC");
-  return stmt.all();
+  return new Promise((resolve, reject) => {
+    db.all("SELECT * FROM markdowns ORDER BY updated_at DESC", (err, rows) => {
+      if (err) {
+        reject(err);
+      } else {
+        const markdowns = rows.map((row) => ({
+          ...row,
+          content: typeof row.content === "string" ? JSON.parse(row.content) : row.content
+        }));
+        resolve(markdowns);
+      }
+    });
+  });
 }
 function getMarkdownById(id) {
-  const stmt = db.prepare("SELECT * FROM markdowns WHERE id = ?");
-  return stmt.get(id);
+  return new Promise((resolve, reject) => {
+    db.get("SELECT * FROM markdowns WHERE id = ?", [id], (err, row) => {
+      if (err) {
+        reject(err);
+      } else if (row) {
+        const markdown = {
+          ...row,
+          content: typeof row.content === "string" ? JSON.parse(row.content) : row.content
+        };
+        resolve(markdown);
+      } else {
+        resolve(void 0);
+      }
+    });
+  });
 }
 function createMarkdown(title, content) {
-  const stmt = db.prepare(
-    "INSERT INTO markdowns (title, content) VALUES (?, ?) RETURNING *"
-  );
-  return stmt.get(title, content);
+  return new Promise((resolve, reject) => {
+    const contentJson = typeof content === "string" ? content : JSON.stringify(content);
+    db.run(
+      "INSERT INTO markdowns (title, content) VALUES (?, ?)",
+      [title, contentJson],
+      function(err) {
+        if (err) {
+          reject(err);
+        } else {
+          db.get("SELECT * FROM markdowns WHERE id = ?", [this.lastID], (err2, row) => {
+            if (err2) {
+              reject(err2);
+            } else if (row) {
+              const markdown = {
+                ...row,
+                content: typeof row.content === "string" ? JSON.parse(row.content) : row.content
+              };
+              resolve(markdown);
+            } else {
+              reject(new Error("Failed to retrieve created markdown"));
+            }
+          });
+        }
+      }
+    );
+  });
 }
 function updateMarkdown(id, title, content) {
-  const stmt = db.prepare(
-    "UPDATE markdowns SET title = ?, content = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? RETURNING *"
-  );
-  return stmt.get(title, content, id);
+  return new Promise((resolve, reject) => {
+    const contentJson = typeof content === "string" ? content : JSON.stringify(content);
+    db.run(
+      "UPDATE markdowns SET title = ?, content = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
+      [title, contentJson, id],
+      function(err) {
+        if (err) {
+          reject(err);
+        } else {
+          db.get("SELECT * FROM markdowns WHERE id = ?", [id], (err2, row) => {
+            if (err2) {
+              reject(err2);
+            } else if (row) {
+              const markdown = {
+                ...row,
+                content: typeof row.content === "string" ? JSON.parse(row.content) : row.content
+              };
+              resolve(markdown);
+            } else {
+              resolve(void 0);
+            }
+          });
+        }
+      }
+    );
+  });
 }
 function deleteMarkdown(id) {
-  const stmt = db.prepare("DELETE FROM markdowns WHERE id = ?");
-  const result = stmt.run(id);
-  return result.changes > 0;
+  return new Promise((resolve, reject) => {
+    db.run("DELETE FROM markdowns WHERE id = ?", [id], function(err) {
+      if (err) {
+        reject(err);
+      } else {
+        resolve(this.changes > 0);
+      }
+    });
+  });
 }
 const __filename$1 = node_url.fileURLToPath(typeof document === "undefined" ? require("url").pathToFileURL(__filename).href : _documentCurrentScript && _documentCurrentScript.tagName.toUpperCase() === "SCRIPT" && _documentCurrentScript.src || new URL("main.cjs", document.baseURI).href);
-const __dirname$1 = path$1.dirname(__filename$1);
-process.env.APP_ROOT = path$1.join(__dirname$1, "..");
+path$1.dirname(__filename$1);
+const appRoot = process.cwd();
+process.env.APP_ROOT = appRoot;
 const VITE_DEV_SERVER_URL = process.env["VITE_DEV_SERVER_URL"];
-const MAIN_DIST = path$1.join(process.env.APP_ROOT, "dist-electron");
-const RENDERER_DIST = path$1.join(process.env.APP_ROOT, "dist");
-process.env.VITE_PUBLIC = VITE_DEV_SERVER_URL ? path$1.join(process.env.APP_ROOT, "public") : RENDERER_DIST;
+const MAIN_DIST = path$1.join(appRoot, "dist-electron");
+const RENDERER_DIST = path$1.join(appRoot, "dist");
+process.env.VITE_PUBLIC = VITE_DEV_SERVER_URL ? path$1.join(appRoot, "public") : RENDERER_DIST;
 let win;
 function createWindow() {
   win = new electron.BrowserWindow({
     icon: path$1.join(process.env.VITE_PUBLIC, "electron-vite.svg"),
     webPreferences: {
-      preload: path$1.resolve(__dirname$1, "..", "dist-electron", "preload.cjs")
+      preload: path$1.join(appRoot, "dist-electron", "preload.cjs")
     }
   });
   win.webContents.on("did-finish-load", () => {

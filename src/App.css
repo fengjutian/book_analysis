@@ -204,71 +204,56 @@ body {
 
 .editor-content {
   flex: 1;
-  display: flex;
   overflow: hidden;
 }
 
-.markdown-textarea {
-  flex: 1;
+/* BlockSuite 编辑器样式 */
+.blocksuite-editor {
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+}
+
+/* BlockSuite 编辑器内部样式 */
+.blocksuite-editor .affine-editor-container {
   padding: 20px;
-  border: none;
-  resize: none;
-  font-family: 'Courier New', Courier, monospace;
-  font-size: 14px;
-  line-height: 1.5;
-  background-color: #f8f9fa;
+  max-width: 800px;
+  margin: 0 auto;
 }
 
-.markdown-textarea:focus {
-  outline: none;
-}
-
-.markdown-preview {
-  flex: 1;
-  padding: 20px;
-  border-left: 1px solid #e0e0e0;
-  overflow-y: auto;
-  background-color: #fff;
-}
-
-/* 预览区域样式 */
-.markdown-preview h1 {
-  font-size: 24px;
-  font-weight: 600;
-  margin-bottom: 20px;
-  color: #333;
-}
-
-.markdown-preview h2 {
-  font-size: 20px;
-  font-weight: 600;
-  margin: 20px 0 15px;
-  color: #333;
-}
-
-.markdown-preview h3 {
-  font-size: 16px;
-  font-weight: 600;
-  margin: 15px 0 10px;
-  color: #333;
-}
-
-.markdown-preview p {
+.blocksuite-editor .affine-paragraph {
   margin-bottom: 15px;
   line-height: 1.6;
 }
 
-.markdown-preview ul,
-.markdown-preview ol {
+.blocksuite-editor .affine-heading {
+  margin: 20px 0 15px;
+  font-weight: 600;
+  color: #333;
+}
+
+.blocksuite-editor .affine-heading-level-1 {
+  font-size: 24px;
+}
+
+.blocksuite-editor .affine-heading-level-2 {
+  font-size: 20px;
+}
+
+.blocksuite-editor .affine-heading-level-3 {
+  font-size: 16px;
+}
+
+.blocksuite-editor .affine-list {
   margin-bottom: 15px;
   padding-left: 25px;
 }
 
-.markdown-preview li {
+.blocksuite-editor .affine-list-item {
   margin-bottom: 5px;
 }
 
-.markdown-preview code {
+.blocksuite-editor .affine-code {
   background-color: #f1f3f4;
   padding: 2px 6px;
   border-radius: 3px;
@@ -276,7 +261,7 @@ body {
   font-size: 14px;
 }
 
-.markdown-preview pre {
+.blocksuite-editor .affine-code-block {
   background-color: #f1f3f4;
   padding: 15px;
   border-radius: 4px;
@@ -284,12 +269,7 @@ body {
   margin-bottom: 15px;
 }
 
-.markdown-preview pre code {
-  background-color: transparent;
-  padding: 0;
-}
-
-.markdown-preview blockquote {
+.blocksuite-editor .affine-quote {
   border-left: 4px solid #007bff;
   padding-left: 15px;
   margin: 15px 0;

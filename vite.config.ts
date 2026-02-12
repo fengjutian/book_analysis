@@ -20,9 +20,14 @@ export default defineConfig({
             outDir: 'dist-electron',
             rollupOptions: {
               external: ['sqlite3'],
-              output: {
-                format: 'cjs',
-              },
+              plugins: [
+                {
+                  name: 'ignore-dynamic-requires',
+                  resolveDynamicImport() {
+                    return null;
+                  },
+                },
+              ],
             },
           },
         },
@@ -31,13 +36,12 @@ export default defineConfig({
         input: path.join(__dirname, 'electron/preload.ts'),
         vite: {
           build: {
-            outDir: 'dist-electron',
-            rollupOptions: {
-              output: {
-                format: 'cjs',
-                entryFileNames: 'preload.cjs',
-              },
+            lib: {
+              entry: 'electron/preload.ts',
+              formats: ['cjs'],
+              fileName: () => 'preload.cjs',
             },
+            outDir: 'dist-electron',
           },
         },
       },

@@ -7,15 +7,18 @@ import { initDatabase, getAllMarkdowns, getMarkdownById, createMarkdown, updateM
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// 使用 process.cwd() 来获取当前工作目录
+const appRoot = process.cwd();
+
 // 设置应用根路径
-process.env.APP_ROOT = path.join(__dirname, '..')
+process.env.APP_ROOT = appRoot
 
 // 🚧 Use ['ENV_NAME'] avoid vite:define plugin - Vite@2.x
 export const VITE_DEV_SERVER_URL = process.env['VITE_DEV_SERVER_URL']
-export const MAIN_DIST = path.join(process.env.APP_ROOT, 'dist-electron')
-export const RENDERER_DIST = path.join(process.env.APP_ROOT, 'dist')
+export const MAIN_DIST = path.join(appRoot, 'dist-electron')
+export const RENDERER_DIST = path.join(appRoot, 'dist')
 
-process.env.VITE_PUBLIC = VITE_DEV_SERVER_URL ? path.join(process.env.APP_ROOT, 'public') : RENDERER_DIST
+process.env.VITE_PUBLIC = VITE_DEV_SERVER_URL ? path.join(appRoot, 'public') : RENDERER_DIST
 
 let win: BrowserWindow | null
 
@@ -23,7 +26,7 @@ function createWindow() {
   win = new BrowserWindow({
     icon: path.join(process.env.VITE_PUBLIC, 'electron-vite.svg'),
     webPreferences: {
-      preload: path.resolve(__dirname, '..', 'dist-electron', 'preload.cjs'),
+      preload: path.join(appRoot, 'dist-electron', 'preload.cjs'),
     },
   })
 
