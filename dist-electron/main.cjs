@@ -43,8 +43,7 @@ function getAllMarkdowns() {
         reject(err);
       } else {
         const markdowns = rows.map((row) => ({
-          ...row,
-          content: typeof row.content === "string" ? JSON.parse(row.content) : row.content
+          ...row
         }));
         resolve(markdowns);
       }
@@ -58,8 +57,7 @@ function getMarkdownById(id) {
         reject(err);
       } else if (row) {
         const markdown = {
-          ...row,
-          content: typeof row.content === "string" ? JSON.parse(row.content) : row.content
+          ...row
         };
         resolve(markdown);
       } else {
@@ -83,8 +81,7 @@ function createMarkdown(title, content) {
               reject(err2);
             } else if (row) {
               const markdown = {
-                ...row,
-                content: typeof row.content === "string" ? JSON.parse(row.content) : row.content
+                ...row
               };
               resolve(markdown);
             } else {
@@ -111,8 +108,7 @@ function updateMarkdown(id, title, content) {
               reject(err2);
             } else if (row) {
               const markdown = {
-                ...row,
-                content: typeof row.content === "string" ? JSON.parse(row.content) : row.content
+                ...row
               };
               resolve(markdown);
             } else {

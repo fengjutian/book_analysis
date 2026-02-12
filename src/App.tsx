@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
-import { Workspace, Page, Editor } from '@blocksuite/editor'
+import { SimpleAffineEditor } from '@blocksuite/editor'
+import '@blocksuite/editor/themes/affine.css'
 import './App.css'
 
 // 类型定义
@@ -30,16 +31,28 @@ function App() {
   const [newTitle, setNewTitle] = useState('');
   
   // BlockSuite 相关引用
-  const workspaceRef = useRef<Workspace | null>(null);
-  const pageRef = useRef<Page | null>(null);
-  const editorRef = useRef<Editor | null>(null);
+  const editorRef = useRef<any | null>(null);
   const editorContainerRef = useRef<HTMLDivElement>(null);
 
   // 加载所有 Markdown 文件
   const loadMarkdowns = async () => {
     try {
-      const data = await window.api.getAllMarkdowns();
-      setMarkdowns(data);
+      if (window.api) {
+        const data = await window.api.getAllMarkdowns();
+        setMarkdowns(data);
+      } else {
+        // 在开发环境中使用模拟数据
+        console.log('Running in development mode, using mock data');
+        setMarkdowns([
+          {
+            id: 1,
+            title: 'Test Markdown',
+            content: '# Test Markdown\n\nThis is a test markdown file.',
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          }
+        ]);
+      }
     } catch (error) {
       console.error('Failed to load markdowns:', error);
     }
@@ -48,7 +61,20 @@ function App() {
   // 加载单个 Markdown 文件
   const loadMarkdown = async (id: number) => {
     try {
-      const data = await window.api.getMarkdownById(id);
+      let data: Markdown | undefined;
+      if (window.api) {
+        data = await window.api.getMarkdownById(id);
+      } else {
+        // 在开发环境中使用模拟数据
+        data = {
+          id: 1,
+          title: 'Test Markdown',
+          content: '# Test Markdown\n\nThis is a test markdown file.\n\nYou can edit this content now!',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        };
+      }
+      
       if (data) {
         setSelectedMarkdown(data);
         
@@ -57,30 +83,23 @@ function App() {
           // 清空容器
           editorContainerRef.current.innerHTML = '';
           
-          // 创建工作区
-          const workspace = new Workspace();
-          workspaceRef.current = workspace;
-          
-          // 创建页面
-          const page = workspace.createPage({ title: data.title });
-          pageRef.current = page;
-          
-          // 加载内容
-          if (data.content) {
-            // 这里需要根据 BlockSuite 的数据格式来加载内容
-            // 暂时使用简单的文本块作为示例
-            const doc = page.getDoc();
-            if (doc) {
-              doc.load({ blocks: [{ type: 'text', content: data.content }] });
-            }
-          }
-          
-          // 创建编辑器
-          const editor = new Editor({
-            container: editorContainerRef.current,
-            page,
-          });
+          // 创建 SimpleAffineEditor 组件
+          const editor = document.createElement('simple-affine-editor');
+          editorContainerRef.current.appendChild(editor);
           editorRef.current = editor;
+          
+          // 等待编辑器初始化完成后加载内容
+          setTimeout(async () => {
+            // 尝试获取编辑器内部的 page 对象
+            if (data.content && editor.page) {
+              // 导入 Markdown 内容
+              const { ContentParser } = await import('@blocksuite/blocks');
+              const parser = new ContentParser(editor.page);
+              parser.importMarkdown(data.content);
+            } else {
+              console.error('Editor page not found');
+            }
+          }, 100);
         }
       }
     } catch (error) {
@@ -93,10 +112,23 @@ function App() {
     try {
       const title = newTitle || 'Untitled';
       const content = '# New Markdown\n\nStart writing here...';
-      const newMarkdown = await window.api.createMarkdown(title, content);
+      let newMarkdown: Markdown;
+      
+      if (window.api) {
+        newMarkdown = await window.api.createMarkdown(title, content);
+      } else {
+        // 在开发环境中使用模拟数据
+        newMarkdown = {
+          id: Date.now(),
+          title,
+          content,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        };
+      }
+      
       setMarkdowns(prev => [newMarkdown, ...prev]);
       setSelectedMarkdown(newMarkdown);
-      setEditingContent(content);
       setNewTitle('');
     } catch (error) {
       console.error('Failed to create markdown:', error);
@@ -105,25 +137,33 @@ function App() {
 
   // 保存 Markdown 文件
   const saveMarkdown = async () => {
-    if (!selectedMarkdown || !pageRef.current) return;
+    if (!selectedMarkdown || !editorRef.current) return;
     try {
       // 从 BlockSuite 编辑器中获取内容
-      const doc = pageRef.current.getDoc();
       let content = '';
-      if (doc) {
-        // 这里需要根据 BlockSuite 的数据格式来获取内容
-        // 暂时使用简单的文本获取方式作为示例
-        const blocks = doc.getBlocks();
-        if (blocks && blocks.length > 0) {
-          content = blocks[0].content || '';
-        }
+      if (editorRef.current.page) {
+        // 导出 Markdown 内容
+        const { ContentParser } = await import('@blocksuite/blocks');
+        const parser = new ContentParser(editorRef.current.page);
+        content = await parser.block2markdown([parser.getSelectedBlock(editorRef.current.page.root)]);
       }
       
-      const updatedMarkdown = await window.api.updateMarkdown(
-        selectedMarkdown.id,
-        selectedMarkdown.title,
-        content
-      );
+      let updatedMarkdown: Markdown | undefined;
+      if (window.api) {
+        updatedMarkdown = await window.api.updateMarkdown(
+          selectedMarkdown.id,
+          selectedMarkdown.title,
+          content
+        );
+      } else {
+        // 在开发环境中使用模拟数据
+        updatedMarkdown = {
+          ...selectedMarkdown,
+          content,
+          updated_at: new Date().toISOString()
+        };
+      }
+      
       if (updatedMarkdown) {
         setSelectedMarkdown(updatedMarkdown);
         setMarkdowns(prev => prev.map(md => md.id === updatedMarkdown.id ? updatedMarkdown : md));
@@ -136,11 +176,13 @@ function App() {
   // 删除 Markdown 文件
   const deleteMarkdown = async (id: number) => {
     try {
-      await window.api.deleteMarkdown(id);
+      if (window.api) {
+        await window.api.deleteMarkdown(id);
+      }
+      // 无论在什么环境，都更新前端状态
       setMarkdowns(prev => prev.filter(md => md.id !== id));
       if (selectedMarkdown && selectedMarkdown.id === id) {
         setSelectedMarkdown(null);
-        setEditingContent('');
       }
     } catch (error) {
       console.error('Failed to delete markdown:', error);

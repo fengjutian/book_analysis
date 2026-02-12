@@ -38,10 +38,9 @@ export function getAllMarkdowns(): Promise<Markdown[]> {
       if (err) {
         reject(err);
       } else {
-        // 解析 content 字段为对象
+        // 直接返回 content 字段，不尝试解析为 JSON
         const markdowns = (rows as any[]).map(row => ({
-          ...row,
-          content: typeof row.content === 'string' ? JSON.parse(row.content) : row.content
+          ...row
         }));
         resolve(markdowns as Markdown[]);
       }
@@ -56,10 +55,9 @@ export function getMarkdownById(id: number): Promise<Markdown | undefined> {
       if (err) {
         reject(err);
       } else if (row) {
-        // 解析 content 字段为对象
+        // 直接返回 content 字段，不尝试解析为 JSON
         const markdown = {
-          ...(row as any),
-          content: typeof row.content === 'string' ? JSON.parse(row.content) : row.content
+          ...(row as any)
         };
         resolve(markdown as Markdown);
       } else {
@@ -85,10 +83,9 @@ export function createMarkdown(title: string, content: any): Promise<Markdown> {
             if (err) {
               reject(err);
             } else if (row) {
-              // 解析 content 字段为对象
+              // 直接返回 content 字段，不尝试解析为 JSON
               const markdown = {
-                ...(row as any),
-                content: typeof row.content === 'string' ? JSON.parse(row.content) : row.content
+                ...(row as any)
               };
               resolve(markdown as Markdown);
             } else {
@@ -117,10 +114,9 @@ export function updateMarkdown(id: number, title: string, content: any): Promise
             if (err) {
               reject(err);
             } else if (row) {
-              // 解析 content 字段为对象
+              // 直接返回 content 字段，不尝试解析为 JSON
               const markdown = {
-                ...(row as any),
-                content: typeof row.content === 'string' ? JSON.parse(row.content) : row.content
+                ...(row as any)
               };
               resolve(markdown as Markdown);
             } else {

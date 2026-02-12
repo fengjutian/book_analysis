@@ -2,6 +2,7 @@ import { defineConfig } from 'vite'
 import path from 'node:path'
 import electron from 'vite-plugin-electron/simple'
 import react from '@vitejs/plugin-react'
+import commonjs from '@rollup/plugin-commonjs'
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -20,16 +21,26 @@ export default defineConfig({
             outDir: 'dist-electron',
             rollupOptions: {
               external: ['sqlite3'],
-              plugins: [
-                {
-                  name: 'ignore-dynamic-requires',
-                  resolveDynamicImport() {
-                    return null;
-                  },
-                },
-              ],
             },
           },
+          plugins: [
+            {
+              name: 'configure-commonjs',
+              config() {
+                return {
+                  build: {
+                    rollupOptions: {
+                      plugins: [
+                        commonjs({
+                          ignoreDynamicRequires: true,
+                        }),
+                      ],
+                    },
+                  },
+                };
+              },
+            },
+          ],
         },
       },
       preload: {
