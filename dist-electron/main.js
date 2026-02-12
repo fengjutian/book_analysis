@@ -1,10 +1,29 @@
-import { app, BrowserWindow, ipcMain } from "electron";
-import { fileURLToPath } from "node:url";
-import path$1 from "node:path";
-import require$$0 from "fs";
-import * as require$$1 from "path";
-import require$$1__default from "path";
-import require$$2 from "util";
+"use strict";
+Object.defineProperty(exports, Symbol.toStringTag, { value: "Module" });
+const electron = require("electron");
+const node_url = require("node:url");
+const path$1 = require("node:path");
+const require$$0 = require("fs");
+const require$$1 = require("path");
+const require$$2 = require("util");
+var _documentCurrentScript = typeof document !== "undefined" ? document.currentScript : null;
+function _interopNamespaceDefault(e) {
+  const n = Object.create(null, { [Symbol.toStringTag]: { value: "Module" } });
+  if (e) {
+    for (const k in e) {
+      if (k !== "default") {
+        const d = Object.getOwnPropertyDescriptor(e, k);
+        Object.defineProperty(n, k, d.get ? d : {
+          enumerable: true,
+          get: () => e[k]
+        });
+      }
+    }
+  }
+  n.default = e;
+  return Object.freeze(n);
+}
+const require$$1__namespace = /* @__PURE__ */ _interopNamespaceDefault(require$$1);
 function getDefaultExportFromCjs(x) {
   return x && x.__esModule && Object.prototype.hasOwnProperty.call(x, "default") ? x["default"] : x;
 }
@@ -46,7 +65,7 @@ var hasRequiredFileUriToPath;
 function requireFileUriToPath() {
   if (hasRequiredFileUriToPath) return fileUriToPath_1;
   hasRequiredFileUriToPath = 1;
-  var sep = require$$1__default.sep || "/";
+  var sep = require$$1.sep || "/";
   fileUriToPath_1 = fileUriToPath;
   function fileUriToPath(uri) {
     if ("string" != typeof uri || uri.length <= 7 || "file://" != uri.substring(0, 7)) {
@@ -76,8 +95,8 @@ var hasRequiredBindings;
 function requireBindings() {
   if (hasRequiredBindings) return bindings.exports;
   hasRequiredBindings = 1;
-  (function(module, exports$1) {
-    var fs2 = require$$0, path2 = require$$1__default, fileURLToPath2 = requireFileUriToPath(), join = path2.join, dirname = path2.dirname, exists = fs2.accessSync && function(path22) {
+  (function(module2, exports$1) {
+    var fs2 = require$$0, path2 = require$$1, fileURLToPath = requireFileUriToPath(), join = path2.join, dirname = path2.dirname, exists = fs2.accessSync && function(path22) {
       try {
         fs2.accessSync(path22);
       } catch (e) {
@@ -161,7 +180,7 @@ function requireBindings() {
       err.tries = tries;
       throw err;
     }
-    module.exports = exports$1 = bindings2;
+    module2.exports = exports$1 = bindings2;
     exports$1.getFileName = function getFileName(calling_file) {
       var origPST = Error.prepareStackTrace, origSTL = Error.stackTraceLimit, dummy = {}, fileName;
       Error.stackTraceLimit = 10;
@@ -185,7 +204,7 @@ function requireBindings() {
       Error.stackTraceLimit = origSTL;
       var fileSchema = "file://";
       if (fileName.indexOf(fileSchema) === 0) {
-        fileName = fileURLToPath2(fileName);
+        fileName = fileURLToPath(fileName);
       }
       return fileName;
     };
@@ -368,7 +387,7 @@ function requireBackup() {
   if (hasRequiredBackup) return backup;
   hasRequiredBackup = 1;
   const fs2 = require$$0;
-  const path2 = require$$1__default;
+  const path2 = require$$1;
   const { promisify } = require$$2;
   const { cppdb } = util$1;
   const fsAccess = promisify(fs2.access);
@@ -685,7 +704,7 @@ function requireInspect() {
   return inspect;
 }
 const fs = require$$0;
-const path = require$$1__default;
+const path = require$$1;
 const util = util$1;
 const SqliteError = sqliteError;
 let DEFAULT_ADDON;
@@ -757,7 +776,7 @@ lib.exports = database;
 lib.exports.SqliteError = sqliteError;
 var libExports = lib.exports;
 const Database = /* @__PURE__ */ getDefaultExportFromCjs(libExports);
-const dbPath = require$$1.join(app.getPath("userData"), "markdown.db");
+const dbPath = require$$1__namespace.join(electron.app.getPath("userData"), "markdown.db");
 const db = new Database(dbPath);
 function initDatabase() {
   db.exec(`
@@ -795,7 +814,7 @@ function deleteMarkdown(id) {
   const result = stmt.run(id);
   return result.changes > 0;
 }
-const __filename$1 = fileURLToPath(import.meta.url);
+const __filename$1 = node_url.fileURLToPath(typeof document === "undefined" ? require("url").pathToFileURL(__filename).href : _documentCurrentScript && _documentCurrentScript.tagName.toUpperCase() === "SCRIPT" && _documentCurrentScript.src || new URL("main.js", document.baseURI).href);
 const __dirname$1 = path$1.dirname(__filename$1);
 process.env.APP_ROOT = path$1.join(__dirname$1, "..");
 const VITE_DEV_SERVER_URL = process.env["VITE_DEV_SERVER_URL"];
@@ -804,10 +823,10 @@ const RENDERER_DIST = path$1.join(process.env.APP_ROOT, "dist");
 process.env.VITE_PUBLIC = VITE_DEV_SERVER_URL ? path$1.join(process.env.APP_ROOT, "public") : RENDERER_DIST;
 let win;
 function createWindow() {
-  win = new BrowserWindow({
+  win = new electron.BrowserWindow({
     icon: path$1.join(process.env.VITE_PUBLIC, "electron-vite.svg"),
     webPreferences: {
-      preload: path$1.join(MAIN_DIST, "preload.mjs")
+      preload: path$1.resolve(__dirname$1, "..", "dist-electron", "preload.cjs")
     }
   });
   win.webContents.on("did-finish-load", () => {
@@ -819,38 +838,36 @@ function createWindow() {
     win.loadFile(path$1.join(RENDERER_DIST, "index.html"));
   }
 }
-app.on("window-all-closed", () => {
+electron.app.on("window-all-closed", () => {
   if (process.platform !== "darwin") {
-    app.quit();
+    electron.app.quit();
     win = null;
   }
 });
-app.on("activate", () => {
-  if (BrowserWindow.getAllWindows().length === 0) {
+electron.app.on("activate", () => {
+  if (electron.BrowserWindow.getAllWindows().length === 0) {
     createWindow();
   }
 });
-app.whenReady().then(() => {
+electron.app.whenReady().then(() => {
   initDatabase();
   createWindow();
 });
-ipcMain.handle("get-all-markdowns", () => {
+electron.ipcMain.handle("get-all-markdowns", () => {
   return getAllMarkdowns();
 });
-ipcMain.handle("get-markdown-by-id", (event, id) => {
+electron.ipcMain.handle("get-markdown-by-id", (_event, id) => {
   return getMarkdownById(id);
 });
-ipcMain.handle("create-markdown", (event, title, content) => {
+electron.ipcMain.handle("create-markdown", (_event, title, content) => {
   return createMarkdown(title, content);
 });
-ipcMain.handle("update-markdown", (event, id, title, content) => {
+electron.ipcMain.handle("update-markdown", (_event, id, title, content) => {
   return updateMarkdown(id, title, content);
 });
-ipcMain.handle("delete-markdown", (event, id) => {
+electron.ipcMain.handle("delete-markdown", (_event, id) => {
   return deleteMarkdown(id);
 });
-export {
-  MAIN_DIST,
-  RENDERER_DIST,
-  VITE_DEV_SERVER_URL
-};
+exports.MAIN_DIST = MAIN_DIST;
+exports.RENDERER_DIST = RENDERER_DIST;
+exports.VITE_DEV_SERVER_URL = VITE_DEV_SERVER_URL;

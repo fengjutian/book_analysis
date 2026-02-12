@@ -3,7 +3,7 @@ import { fileURLToPath } from 'node:url'
 import path from 'node:path'
 import { initDatabase, getAllMarkdowns, getMarkdownById, createMarkdown, updateMarkdown, deleteMarkdown } from './db'
 
-// 添加 __filename 和 __dirname 的 polyfill
+// 使用 import.meta.url 来获取当前模块的路径
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -23,7 +23,7 @@ function createWindow() {
   win = new BrowserWindow({
     icon: path.join(process.env.VITE_PUBLIC, 'electron-vite.svg'),
     webPreferences: {
-      preload: path.join(MAIN_DIST, 'preload.mjs'),
+      preload: path.resolve(__dirname, '..', 'dist-electron', 'preload.cjs'),
     },
   })
 

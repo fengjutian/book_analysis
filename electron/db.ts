@@ -1,4 +1,4 @@
-import Database from 'better-sqlite3';
+import sqlite3 from 'sqlite3';
 import { app } from 'electron';
 import * as path from 'path';
 
@@ -6,7 +6,7 @@ import * as path from 'path';
 const dbPath = path.join(app.getPath('userData'), 'markdown.db');
 
 // 创建数据库实例
-const db = new Database(dbPath);
+const db = new sqlite3.Database(dbPath);
 
 // 初始化数据库
 export function initDatabase() {
@@ -32,38 +32,88 @@ export interface Markdown {
 }
 
 // 获取所有 Markdown 文件
-export function getAllMarkdowns(): Markdown[] {
-  const stmt = db.prepare('SELECT * FROM markdowns ORDER BY updated_at DESC');
-  return stmt.all() as Markdown[];
+export function getAllMarkdowns(): Promise<Markdown[]> {
+  return new Promise((resolve, reject) => {
+    db.all('SELECT * FROM markdowns ORDER BY updated_at DESC', (err, rows) => {
+      if (err) {
+        reject(err);
+      } else {
+        resolve(rows as Markdown[]);
+      }
+    });
+  });
 }
 
 // 根据 ID 获取 Markdown 文件
-export function getMarkdownById(id: number): Markdown | undefined {
-  const stmt = db.prepare('SELECT * FROM markdowns WHERE id = ?');
-  return stmt.get(id) as Markdown | undefined;
+export function getMarkdownById(id: number): Promise<Markdown | undefined> {
+  return new Promise((resolve, reject) => {
+    db.get('SELECT * FROM markdowns WHERE id = ?', [id], (err, row) => {
+      if (err) {
+        reject(err);
+      } else {
+        resolve(row as Markdown | undefined);
+      }
+    });
+  });
 }
 
 // 创建 Markdown 文件
-export function createMarkdown(title: string, content: string): Markdown {
-  const stmt = db.prepare(
-    'INSERT INTO markdowns (title, content) VALUES (?, ?) RETURNING *'
-  );
-  return stmt.get(title, content) as Markdown;
+export function createMarkdown(title: string, content: string): Promise<Markdown> {
+  return new Promise((resolve, reject) => {
+    db.run(
+      'INSERT INTO markdowns (title, content) VALUES (?, ?)',
+      [title, content],
+      function(err) {
+        if (err) {
+          reject(err);
+        } else {
+          db.get('SELECT * FROM markdowns WHERE id = ?', [this.lastID], (err, row) => {
+            if (err) {
+              reject(err);
+            } else {
+              resolve(row as Markdown);
+            }
+          });
+        }
+      }
+    );
+  });
 }
 
 // 更新 Markdown 文件
-export function updateMarkdown(id: number, title: string, content: string): Markdown | undefined {
-  const stmt = db.prepare(
-    'UPDATE markdowns SET title = ?, content = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? RETURNING *'
-  );
-  return stmt.get(title, content, id) as Markdown | undefined;
+export function updateMarkdown(id: number, title: string, content: string): Promise<Markdown | undefined> {
+  return new Promise((resolve, reject) => {
+    db.run(
+      'UPDATE markdowns SET title = ?, content = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+      [title, content, id],
+      function(err) {
+        if (err) {
+          reject(err);
+        } else {
+          db.get('SELECT * FROM markdowns WHERE id = ?', [id], (err, row) => {
+            if (err) {
+              reject(err);
+            } else {
+              resolve(row as Markdown | undefined);
+            }
+          });
+        }
+      }
+    );
+  });
 }
 
 // 删除 Markdown 文件
-export function deleteMarkdown(id: number): boolean {
-  const stmt = db.prepare('DELETE FROM markdowns WHERE id = ?');
-  const result = stmt.run(id);
-  return result.changes > 0;
+export function deleteMarkdown(id: number): Promise<boolean> {
+  return new Promise((resolve, reject) => {
+    db.run('DELETE FROM markdowns WHERE id = ?', [id], function(err) {
+      if (err) {
+        reject(err);
+      } else {
+        resolve(this.changes > 0);
+      }
+    });
+  });
 }
 
 // 导出数据库实例（可选）
