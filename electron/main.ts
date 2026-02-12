@@ -1,7 +1,8 @@
-import { app, BrowserWindow } from 'electron'
+import { app, BrowserWindow, ipcMain } from 'electron'
 import { createRequire } from 'node:module'
 import { fileURLToPath } from 'node:url'
 import path from 'node:path'
+import { initDatabase, getAllMarkdowns, getMarkdownById, createMarkdown, updateMarkdown, deleteMarkdown } from './db'
 
 const require = createRequire(import.meta.url)
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -65,4 +66,33 @@ app.on('activate', () => {
   }
 })
 
-app.whenReady().then(createWindow)
+app.whenReady().then(() => {
+  initDatabase();
+  createWindow();
+})
+
+// --------- IPC 事件处理 ---------
+// 获取所有 Markdown 文件
+ipcMain.handle('get-all-markdowns', () => {
+  return getAllMarkdowns();
+});
+
+// 根据 ID 获取 Markdown 文件
+ipcMain.handle('get-markdown-by-id', (event, id) => {
+  return getMarkdownById(id);
+});
+
+// 创建 Markdown 文件
+ipcMain.handle('create-markdown', (event, title, content) => {
+  return createMarkdown(title, content);
+});
+
+// 更新 Markdown 文件
+ipcMain.handle('update-markdown', (event, id, title, content) => {
+  return updateMarkdown(id, title, content);
+});
+
+// 删除 Markdown 文件
+ipcMain.handle('delete-markdown', (event, id) => {
+  return deleteMarkdown(id);
+});
