@@ -1,21 +1,13 @@
 import { app, BrowserWindow, ipcMain } from 'electron'
-import { createRequire } from 'node:module'
 import { fileURLToPath } from 'node:url'
 import path from 'node:path'
 import { initDatabase, getAllMarkdowns, getMarkdownById, createMarkdown, updateMarkdown, deleteMarkdown } from './db'
 
-const require = createRequire(import.meta.url)
-const __dirname = path.dirname(fileURLToPath(import.meta.url))
+// 添加 __filename 和 __dirname 的 polyfill
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
-// The built directory structure
-//
-// ├─┬─┬ dist
-// │ │ └── index.html
-// │ │
-// │ ├─┬ dist-electron
-// │ │ ├── main.js
-// │ │ └── preload.mjs
-// │
+// 设置应用根路径
 process.env.APP_ROOT = path.join(__dirname, '..')
 
 // 🚧 Use ['ENV_NAME'] avoid vite:define plugin - Vite@2.x
@@ -31,7 +23,7 @@ function createWindow() {
   win = new BrowserWindow({
     icon: path.join(process.env.VITE_PUBLIC, 'electron-vite.svg'),
     webPreferences: {
-      preload: path.join(__dirname, 'preload.mjs'),
+      preload: path.join(MAIN_DIST, 'preload.mjs'),
     },
   })
 
@@ -78,21 +70,21 @@ ipcMain.handle('get-all-markdowns', () => {
 });
 
 // 根据 ID 获取 Markdown 文件
-ipcMain.handle('get-markdown-by-id', (event, id) => {
+ipcMain.handle('get-markdown-by-id', (_event, id) => {
   return getMarkdownById(id);
 });
 
 // 创建 Markdown 文件
-ipcMain.handle('create-markdown', (event, title, content) => {
+ipcMain.handle('create-markdown', (_event, title, content) => {
   return createMarkdown(title, content);
 });
 
 // 更新 Markdown 文件
-ipcMain.handle('update-markdown', (event, id, title, content) => {
+ipcMain.handle('update-markdown', (_event, id, title, content) => {
   return updateMarkdown(id, title, content);
 });
 
 // 删除 Markdown 文件
-ipcMain.handle('delete-markdown', (event, id) => {
+ipcMain.handle('delete-markdown', (_event, id) => {
   return deleteMarkdown(id);
 });

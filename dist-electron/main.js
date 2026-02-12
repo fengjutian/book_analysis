@@ -1,5 +1,4 @@
 import { app, BrowserWindow, ipcMain } from "electron";
-import { createRequire } from "node:module";
 import { fileURLToPath } from "node:url";
 import path$1 from "node:path";
 import require$$0 from "fs";
@@ -796,8 +795,8 @@ function deleteMarkdown(id) {
   const result = stmt.run(id);
   return result.changes > 0;
 }
-createRequire(import.meta.url);
-const __dirname$1 = path$1.dirname(fileURLToPath(import.meta.url));
+const __filename$1 = fileURLToPath(import.meta.url);
+const __dirname$1 = path$1.dirname(__filename$1);
 process.env.APP_ROOT = path$1.join(__dirname$1, "..");
 const VITE_DEV_SERVER_URL = process.env["VITE_DEV_SERVER_URL"];
 const MAIN_DIST = path$1.join(process.env.APP_ROOT, "dist-electron");
@@ -808,7 +807,7 @@ function createWindow() {
   win = new BrowserWindow({
     icon: path$1.join(process.env.VITE_PUBLIC, "electron-vite.svg"),
     webPreferences: {
-      preload: path$1.join(__dirname$1, "preload.mjs")
+      preload: path$1.join(MAIN_DIST, "preload.mjs")
     }
   });
   win.webContents.on("did-finish-load", () => {

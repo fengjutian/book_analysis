@@ -11,11 +11,29 @@ export default defineConfig({
       main: {
         // Shortcut of `build.lib.entry`.
         entry: 'electron/main.ts',
+        // 使用 commonjs 模块格式，提供 __filename 和 __dirname 变量
+        vite: {
+          build: {
+            lib: {
+              format: 'cjs',
+            },
+          },
+        },
       },
       preload: {
         // Shortcut of `build.rollupOptions.input`.
         // Preload scripts may contain Web assets, so use the `build.rollupOptions.input` instead `build.lib.entry`.
         input: path.join(__dirname, 'electron/preload.ts'),
+        // 使用 commonjs 模块格式，提供 __filename 和 __dirname 变量
+        vite: {
+          build: {
+            rollupOptions: {
+              output: {
+                format: 'cjs',
+              },
+            },
+          },
+        },
       },
       // Ployfill the Electron and Node.js API for Renderer process.
       // If you want use Node.js in Renderer process, the `nodeIntegration` needs to be enabled in the Main process.
@@ -26,4 +44,10 @@ export default defineConfig({
         : {},
     }),
   ],
+  // 解决 ES 模块中缺少 __filename 和 __dirname 的问题
+  resolve: {
+    alias: {
+      '@': path.resolve(__dirname, 'src'),
+    },
+  },
 })
