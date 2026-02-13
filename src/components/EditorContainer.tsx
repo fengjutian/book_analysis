@@ -19,6 +19,11 @@ const EditorContainer = () => {
 
     const saveDoc = async (doc: any) => {
       try {
+        if (!doc || !doc.id) {
+          console.error('Invalid doc object:', doc);
+          return;
+        }
+        
         console.log('Saving doc:', doc.id);
         
         // 这里可以添加更多逻辑，例如将文档内容转换为 Markdown 格式
@@ -28,11 +33,25 @@ const EditorContainer = () => {
           // 提取文档 ID 中的数字部分
           const docId = doc.id.replace('doc-', '');
           if (!isNaN(parseInt(docId))) {
-            await window.api.updateMarkdown(parseInt(docId), {
-              title: doc.meta?.title || 'Untitled',
-              content: '# Document\n\nContent goes here...' // 这里应该是实际的文档内容
-            });
-            console.log('Document saved to local:', doc.id);
+            try {
+              await window.api.updateMarkdown(parseInt(docId), {
+                title: doc.meta?.title || 'Untitled',
+                content: '# Document\n\nContent goes here...' // 这里应该是实际的文档内容
+              });
+              console.log('Document saved to local:', doc.id);
+            } catch (error) {
+              console.error('Failed to update document:', error);
+              // 如果更新失败，可能是文档不存在，尝试创建新文档
+              try {
+                const savedMarkdown = await window.api.createMarkdown({
+                  title: doc.meta?.title || 'Untitled',
+                  content: '# Document\n\nContent goes here...'
+                });
+                console.log('Document created instead:', savedMarkdown);
+              } catch (createError) {
+                console.error('Failed to create document:', createError);
+              }
+            }
           }
         } else {
           // 开发环境中模拟保存
@@ -45,10 +64,24 @@ const EditorContainer = () => {
 
     // 监听文档变化事件
     const disposable = [
-      editor.slots.docUpdated.on(({ doc }) => {
-        saveDoc(doc);
+      editor.slots.docUpdated.on((event) => {
+        console.log('docUpdated event:', event);
+        if (event && event.newDocId) {
+          // 从集合中获取文档
+          const doc = [...collection.docs.values()].find(
+            blocks => blocks.getDoc().id === event.newDocId
+          )?.getDoc();
+          if (doc) {
+            saveDoc(doc);
+          } else {
+            console.error('Doc not found for newDocId:', event.newDocId);
+          }
+        } else {
+          console.error('Invalid docUpdated event:', event);
+        }
       }),
-      collection.slots.docUpdated.on(() => {
+      collection.slots.docUpdated.on((event) => {
+        console.log('collection.docUpdated event:', event);
         // 当集合中的文档更新时，也可以执行保存操作
       }),
     ];

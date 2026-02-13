@@ -6,9 +6,9 @@ electron.contextBridge.exposeInMainWorld("api", {
   // 根据 ID 获取 Markdown 文件
   getMarkdownById: (id) => electron.ipcRenderer.invoke("get-markdown-by-id", id),
   // 创建 Markdown 文件
-  createMarkdown: (title, content) => electron.ipcRenderer.invoke("create-markdown", title, content),
+  createMarkdown: (markdown) => electron.ipcRenderer.invoke("create-markdown", markdown.title, markdown.content),
   // 更新 Markdown 文件
-  updateMarkdown: (id, title, content) => electron.ipcRenderer.invoke("update-markdown", id, title, content),
+  updateMarkdown: (id, markdown) => electron.ipcRenderer.invoke("update-markdown", id, markdown.title, markdown.content),
   // 删除 Markdown 文件
   deleteMarkdown: (id) => electron.ipcRenderer.invoke("delete-markdown", id),
   // 通用 IPC 方法

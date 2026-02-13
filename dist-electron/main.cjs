@@ -68,7 +68,8 @@ function getMarkdownById(id) {
 }
 function createMarkdown(title, content) {
   return new Promise((resolve, reject) => {
-    const contentJson = typeof content === "string" ? content : JSON.stringify(content);
+    const contentJson = typeof content === "string" ? content : content !== void 0 && content !== null ? JSON.stringify(content) : "";
+    console.log("Creating markdown with content:", contentJson);
     db.run(
       "INSERT INTO markdowns (title, content) VALUES (?, ?)",
       [title, contentJson],
@@ -95,7 +96,8 @@ function createMarkdown(title, content) {
 }
 function updateMarkdown(id, title, content) {
   return new Promise((resolve, reject) => {
-    const contentJson = typeof content === "string" ? content : JSON.stringify(content);
+    const contentJson = typeof content === "string" ? content : content !== void 0 && content !== null ? JSON.stringify(content) : "";
+    console.log("Updating markdown with content:", contentJson);
     db.run(
       "UPDATE markdowns SET title = ?, content = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
       [title, contentJson, id],

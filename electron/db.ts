@@ -70,8 +70,9 @@ export function getMarkdownById(id: number): Promise<Markdown | undefined> {
 // 创建 Markdown 文件
 export function createMarkdown(title: string, content: any): Promise<Markdown> {
   return new Promise((resolve, reject) => {
-    // 将 content 转换为 JSON 字符串
-    const contentJson = typeof content === 'string' ? content : JSON.stringify(content);
+    // 将 content 转换为 JSON 字符串，确保不会是 undefined 或 null
+    const contentJson = typeof content === 'string' ? content : (content !== undefined && content !== null ? JSON.stringify(content) : '');
+    console.log('Creating markdown with content:', contentJson);
     db.run(
       'INSERT INTO markdowns (title, content) VALUES (?, ?)',
       [title, contentJson],
@@ -101,8 +102,9 @@ export function createMarkdown(title: string, content: any): Promise<Markdown> {
 // 更新 Markdown 文件
 export function updateMarkdown(id: number, title: string, content: any): Promise<Markdown | undefined> {
   return new Promise((resolve, reject) => {
-    // 将 content 转换为 JSON 字符串
-    const contentJson = typeof content === 'string' ? content : JSON.stringify(content);
+    // 将 content 转换为 JSON 字符串，确保不会是 undefined 或 null
+    const contentJson = typeof content === 'string' ? content : (content !== undefined && content !== null ? JSON.stringify(content) : '');
+    console.log('Updating markdown with content:', contentJson);
     db.run(
       'UPDATE markdowns SET title = ?, content = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
       [title, contentJson, id],
