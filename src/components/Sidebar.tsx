@@ -68,14 +68,7 @@ const Sidebar = () => {
         } else {
           // 开发环境中模拟加载
           console.log('Simulating load local markdowns in development mode');
-          // 模拟创建一个文档
-          const mockDoc = collection.createDoc({ id: `doc-${Date.now()}` });
-          mockDoc.load(() => {
-            const pageBlockId = mockDoc.addBlock('affine:page', {});
-            mockDoc.addBlock('affine:surface', {}, pageBlockId);
-            const noteId = mockDoc.addBlock('affine:note', {}, pageBlockId);
-            mockDoc.addBlock('affine:paragraph', {}, noteId);
-          });
+          // 不自动创建文档，只在用户点击创建按钮时创建
         }
       } catch (error) {
         console.error('Failed to load local markdowns:', error);
