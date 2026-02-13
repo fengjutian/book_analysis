@@ -27,21 +27,25 @@ const EditorContainer = () => {
       }
       
       console.log('Saving doc:', doc.id);
+      console.log('Doc root:', doc.root);
+      console.log('Doc blocks:', doc.root?.children);
       
       const job = new Job({ collection });
       const snapshot = await job.docToSnapshot(doc);
       const content = JSON.stringify(snapshot);
       
-      console.log('Saving snapshot:', snapshot);
+      console.log('Saving snapshot:', JSON.stringify(snapshot, null, 2));
+      console.log('Content length:', content.length);
       
       if (window.api) {
         const docId = doc.id.replace('doc-', '');
         if (!isNaN(parseInt(docId))) {
-          await window.api.updateMarkdown(parseInt(docId), {
+          console.log('Calling updateMarkdown with id:', parseInt(docId));
+          const result = await window.api.updateMarkdown(parseInt(docId), {
             title: doc.meta?.title || 'Untitled',
             content: content
           });
-          console.log('Document saved to local:', doc.id);
+          console.log('Document saved to local:', doc.id, result);
         }
       } else {
         console.log('Simulating save document in development mode:', doc.id);
