@@ -2,12 +2,56 @@ import { useEffect, useState } from 'react';
 import { Doc } from '@blocksuite/store';
 import { useEditor } from '../editor/context';
 
+interface Markdown {
+  id: number;
+  title: string;
+  content: string;
+  created_at: string;
+  updated_at: string;
+}
+
 const Sidebar = () => {
   const { collection, editor } = useEditor()!;
   const [docs, setDocs] = useState<Doc[]>([]);
 
   useEffect(() => {
     if (!collection || !editor) return;
+    
+    // 加载本地 Markdown 文件
+    const loadLocalMarkdowns = async () => {
+      try {
+        if (window.api) {
+          const markdowns = await window.api.getAllMarkdowns();
+          console.log('Loaded markdowns from local:', markdowns);
+          
+          // 为每个本地 Markdown 创建文档
+          markdowns.forEach((md: Markdown) => {
+            // 检查文档是否已存在
+            const existingDoc = [...collection.docs.values()].find(
+              blocks => blocks.getDoc().id === `doc-${md.id}`
+            );
+            
+            if (!existingDoc) {
+              const doc = collection.createDoc({ id: `doc-${md.id}` });
+              doc.load(() => {
+                const pageBlockId = doc.addBlock('affine:page', {});
+                doc.addBlock('affine:surface', {}, pageBlockId);
+                const noteId = doc.addBlock('affine:note', {}, pageBlockId);
+                // 这里可以添加更多内容，例如解析 Markdown 并添加对应的块
+              });
+            }
+          });
+        } else {
+          // 开发环境中模拟加载
+          console.log('Simulating load local markdowns in development mode');
+        }
+      } catch (error) {
+        console.error('Failed to load local markdowns:', error);
+      }
+    };
+    
+    loadLocalMarkdowns();
+    
     const updateDocs = () => {
       const docs = [...collection.docs.values()].map(blocks => blocks.getDoc());
       setDocs(docs);
