@@ -104,26 +104,7 @@ const Sidebar = () => {
     
     console.log('Creating new doc...');
     
-    // 创建新文档
-    const newDoc = collection.createDoc({ id: `doc-${Date.now()}` });
-    newDoc.load(() => {
-      const pageBlockId = newDoc.addBlock('affine:page', {});
-      newDoc.addBlock('affine:surface', {}, pageBlockId);
-      const noteId = newDoc.addBlock('affine:note', {}, pageBlockId);
-      newDoc.addBlock('affine:paragraph', {}, noteId);
-    });
-    
-    // 切换到新文档
-    if (editor) {
-      console.log('Switching to new doc:', newDoc.id);
-      editor.doc = newDoc;
-    }
-    
-    // 更新文档列表
-    const updatedDocs = [...collection.docs.values()].map(blocks => blocks.getDoc());
-    setDocs(updatedDocs);
-    
-    // 保存到本地
+    // 先保存到数据库，获取数据库 ID
     try {
       if (window.api) {
         console.log('Saving new doc to local...');
@@ -133,24 +114,23 @@ const Sidebar = () => {
         });
         console.log('Document saved to local:', savedMarkdown);
         
-        // 使用返回的 ID 更新文档 ID
+        // 使用数据库返回的 ID 创建文档
         if (savedMarkdown && savedMarkdown.id) {
-          // 从集合中删除旧文档
-          // 注意：BlockSuite 的 DocCollection 可能没有 deleteDoc 方法，需要查看文档
-          // 暂时注释掉这行，因为我们会创建新文档
-          // collection.deleteDoc(newDoc.id);
           // 创建新文档，使用数据库返回的 ID
-          const updatedDoc = collection.createDoc({ id: `doc-${savedMarkdown.id}` });
-          updatedDoc.load(() => {
-            const pageBlockId = updatedDoc.addBlock('affine:page', {});
-            updatedDoc.addBlock('affine:surface', {}, pageBlockId);
-            const noteId = updatedDoc.addBlock('affine:note', {}, pageBlockId);
-            updatedDoc.addBlock('affine:paragraph', {}, noteId);
+          const newDoc = collection.createDoc({ id: `doc-${savedMarkdown.id}` });
+          newDoc.load(() => {
+            const pageBlockId = newDoc.addBlock('affine:page', {});
+            newDoc.addBlock('affine:surface', {}, pageBlockId);
+            const noteId = newDoc.addBlock('affine:note', {}, pageBlockId);
+            newDoc.addBlock('affine:paragraph', {}, noteId);
           });
-          // 切换到更新后的文档
+          
+          // 切换到新文档
           if (editor) {
-            editor.doc = updatedDoc;
+            console.log('Switching to new doc:', newDoc.id);
+            editor.doc = newDoc;
           }
+          
           // 更新文档列表
           const updatedDocs = [...collection.docs.values()].map(blocks => blocks.getDoc());
           setDocs(updatedDocs);
@@ -158,9 +138,45 @@ const Sidebar = () => {
       } else {
         // 开发环境中模拟保存
         console.log('Simulating document save in development mode');
+        // 创建新文档，使用临时 ID
+        const newDoc = collection.createDoc({ id: `doc-${Date.now()}` });
+        newDoc.load(() => {
+          const pageBlockId = newDoc.addBlock('affine:page', {});
+          newDoc.addBlock('affine:surface', {}, pageBlockId);
+          const noteId = newDoc.addBlock('affine:note', {}, pageBlockId);
+          newDoc.addBlock('affine:paragraph', {}, noteId);
+        });
+        
+        // 切换到新文档
+        if (editor) {
+          console.log('Switching to new doc:', newDoc.id);
+          editor.doc = newDoc;
+        }
+        
+        // 更新文档列表
+        const updatedDocs = [...collection.docs.values()].map(blocks => blocks.getDoc());
+        setDocs(updatedDocs);
       }
     } catch (error) {
       console.error('Failed to save document:', error);
+      // 如果保存失败，创建临时文档
+      const newDoc = collection.createDoc({ id: `doc-${Date.now()}` });
+      newDoc.load(() => {
+        const pageBlockId = newDoc.addBlock('affine:page', {});
+        newDoc.addBlock('affine:surface', {}, pageBlockId);
+        const noteId = newDoc.addBlock('affine:note', {}, pageBlockId);
+        newDoc.addBlock('affine:paragraph', {}, noteId);
+      });
+      
+      // 切换到新文档
+      if (editor) {
+        console.log('Switching to new doc:', newDoc.id);
+        editor.doc = newDoc;
+      }
+      
+      // 更新文档列表
+      const updatedDocs = [...collection.docs.values()].map(blocks => blocks.getDoc());
+      setDocs(updatedDocs);
     }
   };
 
