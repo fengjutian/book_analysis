@@ -173,6 +173,44 @@ const Sidebar = () => {
     }
   };
 
+  const deleteDoc = async (doc: any, e: React.MouseEvent) => {
+    e.stopPropagation(); // 阻止冒泡，避免触发文档点击事件
+    if (!collection || !editor) return;
+    
+    console.log('Deleting doc:', doc.id);
+    
+    try {
+      // 从本地数据库删除
+      if (window.api) {
+        const docId = doc.id.replace('doc-', '');
+        if (!isNaN(parseInt(docId))) {
+          console.log('Deleting from local database:', parseInt(docId));
+          await window.api.deleteMarkdown(parseInt(docId));
+          console.log('Document deleted from local database:', doc.id);
+        }
+      }
+      
+      // 从 BlockSuite 集合中删除
+      // 注意：BlockSuite 的 DocCollection 可能没有直接的删除方法
+      // 我们可以通过移除文档的方式来实现
+      // 这里我们先更新文档列表，过滤掉被删除的文档
+      const updatedDocs = [...collection.docs.values()]
+        .map(blocks => blocks.getDoc())
+        .filter(d => d.id !== doc.id);
+      setDocs(updatedDocs);
+      
+      // 如果当前编辑的文档被删除，清空编辑器
+      if (editor.doc === doc) {
+        console.log('Current edited doc deleted, clearing editor');
+        // 注意：BlockSuite 编辑器可能需要一个默认文档
+        // 这里我们暂时不设置任何文档
+        // editor.doc = null;
+      }
+    } catch (error) {
+      console.error('Failed to delete document:', error);
+    }
+  };
+
   return (
     <div className="sidebar">
       <div className="header">
@@ -184,15 +222,26 @@ const Sidebar = () => {
           <div
             className={`doc-item ${editor?.doc === doc ? 'active' : ''}`}
             key={doc.id}
-            onClick={() => {
-              if (editor) editor.doc = doc;
-              const docs = [...collection.docs.values()].map(blocks =>
-                blocks.getDoc()
-              );
-              setDocs(docs);
-            }}
           >
-            {doc.meta?.title || 'Untitled'}
+            <div 
+              className="doc-item-title"
+              onClick={() => {
+                if (editor) editor.doc = doc;
+                const docs = [...collection.docs.values()].map(blocks =>
+                  blocks.getDoc()
+                );
+                setDocs(docs);
+              }}
+            >
+              {doc.meta?.title || 'Untitled'}
+            </div>
+            <button 
+              className="delete-btn"
+              onClick={(e) => deleteDoc(doc, e)}
+              title="Delete document"
+            >
+              ×
+            </button>
           </div>
         ))}
       </div>
