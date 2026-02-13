@@ -94,15 +94,18 @@ function createMarkdown(title, content) {
 }
 function updateMarkdown(id, title, content) {
   return new Promise((resolve, reject) => {
+    console.log("updateMarkdown called with:", { id, title, contentType: typeof content, content });
     const contentJson = typeof content === "string" ? content : content !== void 0 && content !== null ? JSON.stringify(content) : "";
-    console.log("Updating markdown with content:", contentJson);
+    console.log("Updating markdown with content length:", contentJson.length);
     db.run(
       "UPDATE markdowns SET title = ?, content = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
       [title, contentJson, id],
       function(err) {
         if (err) {
+          console.error("Update error:", err);
           reject(err);
         } else {
+          console.log("Update successful, changes:", this.changes);
           db.get("SELECT * FROM markdowns WHERE id = ?", [id], (err2, row) => {
             if (err2) {
               reject(err2);
@@ -179,6 +182,7 @@ electron.ipcMain.handle("create-markdown", (_event, title, content) => {
   return createMarkdown(title, content);
 });
 electron.ipcMain.handle("update-markdown", (_event, id, title, content) => {
+  console.log("IPC update-markdown received:", { id, title, contentType: typeof content });
   return updateMarkdown(id, title, content);
 });
 electron.ipcMain.handle("delete-markdown", (_event, id) => {

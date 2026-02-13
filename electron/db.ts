@@ -102,21 +102,22 @@ export function createMarkdown(title: string, content: any): Promise<Markdown> {
 // 更新 Markdown 文件
 export function updateMarkdown(id: number, title: string, content: any): Promise<Markdown | undefined> {
   return new Promise((resolve, reject) => {
-    // 将 content 转换为 JSON 字符串，确保不会是 undefined 或 null
+    console.log('updateMarkdown called with:', { id, title, contentType: typeof content, content });
     const contentJson = typeof content === 'string' ? content : (content !== undefined && content !== null ? JSON.stringify(content) : '');
-    console.log('Updating markdown with content:', contentJson);
+    console.log('Updating markdown with content length:', contentJson.length);
     db.run(
       'UPDATE markdowns SET title = ?, content = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
       [title, contentJson, id],
       function(err) {
         if (err) {
+          console.error('Update error:', err);
           reject(err);
         } else {
+          console.log('Update successful, changes:', this.changes);
           db.get('SELECT * FROM markdowns WHERE id = ?', [id], (err, row) => {
             if (err) {
               reject(err);
             } else if (row) {
-              // 直接返回 content 字段，不尝试解析为 JSON
               const markdown = {
                 ...(row as any)
               };

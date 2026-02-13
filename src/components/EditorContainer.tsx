@@ -27,22 +27,20 @@ const EditorContainer = () => {
       }
       
       console.log('Saving doc:', doc.id);
-      console.log('Doc root:', doc.root);
-      console.log('Doc blocks:', doc.root?.children);
+      console.log('Doc meta:', doc.meta);
       
       const job = new Job({ collection });
       const snapshot = await job.docToSnapshot(doc);
       const content = JSON.stringify(snapshot);
       
-      console.log('Saving snapshot:', JSON.stringify(snapshot, null, 2));
-      console.log('Content length:', content.length);
+      const title = snapshot.meta?.title || 'Untitled';
+      console.log('Saving with title:', title, 'content length:', content.length);
       
       if (window.api) {
         const docId = doc.id.replace('doc-', '');
         if (!isNaN(parseInt(docId))) {
-          console.log('Calling updateMarkdown with id:', parseInt(docId));
           const result = await window.api.updateMarkdown(parseInt(docId), {
-            title: doc.meta?.title || 'Untitled',
+            title: title,
             content: content
           });
           console.log('Document saved to local:', doc.id, result);

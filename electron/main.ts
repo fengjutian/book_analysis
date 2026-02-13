@@ -82,6 +82,7 @@ ipcMain.handle('create-markdown', (_event, title, content) => {
 
 // 更新 Markdown 文件
 ipcMain.handle('update-markdown', (_event, id, title, content) => {
+  console.log('IPC update-markdown received:', { id, title, contentType: typeof content });
   return updateMarkdown(id, title, content);
 });
 
