@@ -3,7 +3,7 @@ import { initEditor } from '../editor/editor';
 import { EditorContext } from '../editor/context';
 
 export const EditorProvider = ({ children }: { children: React.ReactNode }) => {
-  const [editorState, setEditorState] = useState(() => initEditor());
+  const [editorState] = useState(() => initEditor());
 
   // 确保只初始化一次
   useEffect(() => {

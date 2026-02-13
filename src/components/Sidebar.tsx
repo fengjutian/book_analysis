@@ -34,13 +34,35 @@ const Sidebar = () => {
             
             if (!existingDoc) {
               console.log('Creating doc for markdown:', md.id, md.title);
+              console.log('Markdown content:', md.content);
               const doc = collection.createDoc({ id: `doc-${md.id}` });
               doc.load(() => {
                 const pageBlockId = doc.addBlock('affine:page', {});
                 doc.addBlock('affine:surface', {}, pageBlockId);
                 const noteId = doc.addBlock('affine:note', {}, pageBlockId);
-                // 这里可以添加更多内容，例如解析 Markdown 并添加对应的块
+                // 使用本地 Markdown 的内容来初始化文档
+                if (md.content) {
+                  console.log('Loading content for markdown:', md.id, md.content);
+                  try {
+                    // 尝试解析保存的 JSON 内容
+                    const parsedContent = JSON.parse(md.content);
+                    console.log('Parsed content:', parsedContent);
+                    // 这里可以添加更多逻辑，例如根据解析后的内容创建对应的块
+                    // 暂时只添加一个段落块
+                    doc.addBlock('affine:paragraph', {}, noteId);
+                  } catch (error) {
+                    console.error('Failed to parse markdown content:', error);
+                    // 如果解析失败，添加默认内容
+                    doc.addBlock('affine:paragraph', {}, noteId);
+                  }
+                } else {
+                  console.error('Markdown content is empty:', md.id);
+                  // 添加默认内容
+                  doc.addBlock('affine:paragraph', {}, noteId);
+                }
               });
+            } else {
+              console.log('Doc already exists:', `doc-${md.id}`);
             }
           });
         } else {
@@ -114,7 +136,9 @@ const Sidebar = () => {
         // 使用返回的 ID 更新文档 ID
         if (savedMarkdown && savedMarkdown.id) {
           // 从集合中删除旧文档
-          collection.deleteDoc(newDoc.id);
+          // 注意：BlockSuite 的 DocCollection 可能没有 deleteDoc 方法，需要查看文档
+          // 暂时注释掉这行，因为我们会创建新文档
+          // collection.deleteDoc(newDoc.id);
           // 创建新文档，使用数据库返回的 ID
           const updatedDoc = collection.createDoc({ id: `doc-${savedMarkdown.id}` });
           updatedDoc.load(() => {

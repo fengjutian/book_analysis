@@ -1,11 +1,9 @@
 import { app, BrowserWindow, ipcMain } from 'electron'
-import { fileURLToPath } from 'node:url'
 import path from 'node:path'
 import { initDatabase, getAllMarkdowns, getMarkdownById, createMarkdown, updateMarkdown, deleteMarkdown } from './db'
 
 // 使用 import.meta.url 来获取当前模块的路径
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+// const __filename = fileURLToPath(import.meta.url);
 
 // 使用 process.cwd() 来获取当前工作目录
 const appRoot = process.cwd();

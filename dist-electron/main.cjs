@@ -1,11 +1,9 @@
 "use strict";
 Object.defineProperty(exports, Symbol.toStringTag, { value: "Module" });
 const electron = require("electron");
-const node_url = require("node:url");
 const path$1 = require("node:path");
 const sqlite3 = require("sqlite3");
 const path = require("path");
-var _documentCurrentScript = typeof document !== "undefined" ? document.currentScript : null;
 function _interopNamespaceDefault(e) {
   const n = Object.create(null, { [Symbol.toStringTag]: { value: "Module" } });
   if (e) {
@@ -133,8 +131,6 @@ function deleteMarkdown(id) {
     });
   });
 }
-const __filename$1 = node_url.fileURLToPath(typeof document === "undefined" ? require("url").pathToFileURL(__filename).href : _documentCurrentScript && _documentCurrentScript.tagName.toUpperCase() === "SCRIPT" && _documentCurrentScript.src || new URL("main.cjs", document.baseURI).href);
-path$1.dirname(__filename$1);
 const appRoot = process.cwd();
 process.env.APP_ROOT = appRoot;
 const VITE_DEV_SERVER_URL = process.env["VITE_DEV_SERVER_URL"];
