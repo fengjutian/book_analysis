@@ -34,18 +34,19 @@ const Sidebar = () => {
             );
             
             if (!existingDoc) {
-              console.log('Creating doc for markdown:', md.id, md.title);
+              console.log('Creating doc for markdown:', md.id, md.title, 'content length:', md.content?.length);
               
-              if (md.content) {
+              if (md.content && md.content.length > 10) {
                 try {
                   const snapshot = JSON.parse(md.content);
-                  console.log('Parsed snapshot for doc:', docId, snapshot);
+                  console.log('Parsed snapshot for doc:', docId, 'blocks:', snapshot?.blocks?.children?.length);
                   
                   if (snapshot && snapshot.type === 'page' && snapshot.blocks) {
                     snapshot.meta = { ...snapshot.meta, id: docId };
-                    await job.snapshotToDoc(snapshot);
-                    console.log('Document restored from snapshot:', docId);
+                    const doc = await job.snapshotToDoc(snapshot);
+                    console.log('Document restored from snapshot:', docId, 'root:', doc.root?.id);
                   } else {
+                    console.log('Invalid snapshot format, creating empty doc');
                     createEmptyDoc(docId);
                   }
                 } catch (error) {
@@ -53,6 +54,7 @@ const Sidebar = () => {
                   createEmptyDoc(docId);
                 }
               } else {
+                console.log('No content or empty content, creating empty doc');
                 createEmptyDoc(docId);
               }
             } else {

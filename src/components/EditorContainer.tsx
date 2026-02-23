@@ -27,10 +27,14 @@ const EditorContainer = () => {
       }
       
       console.log('Saving doc:', doc.id);
-      console.log('Doc meta:', doc.meta);
+      console.log('Doc root:', doc.root);
+      console.log('Doc root children:', doc.root?.children?.map((c: any) => ({ id: c.id, flavour: c.flavour, children: c.children?.length })));
       
       const job = new Job({ collection });
       const snapshot = await job.docToSnapshot(doc);
+      
+      console.log('Snapshot blocks:', JSON.stringify(snapshot.blocks, null, 2));
+      
       const content = JSON.stringify(snapshot);
       
       const title = snapshot.meta?.title || 'Untitled';
