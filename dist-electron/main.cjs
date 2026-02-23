@@ -38,8 +38,14 @@ function getAllMarkdowns() {
   return new Promise((resolve, reject) => {
     db.all("SELECT * FROM markdowns ORDER BY updated_at DESC", (err, rows) => {
       if (err) {
+        console.error("getAllMarkdowns error:", err);
         reject(err);
       } else {
+        console.log("getAllMarkdowns found:", rows.length, "documents");
+        rows.forEach((row) => {
+          var _a;
+          console.log("  - doc id:", row.id, "title:", row.title, "content length:", (_a = row.content) == null ? void 0 : _a.length);
+        });
         const markdowns = rows.map((row) => ({
           ...row
         }));

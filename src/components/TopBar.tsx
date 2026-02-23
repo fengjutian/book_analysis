@@ -1,3 +1,3 @@
-const TopBar = () => <div className="top-bar">React Basic</div>;
+const TopBar = () => <div className="top-bar"></div>;
 
 export default TopBar;

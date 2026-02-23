@@ -36,9 +36,13 @@ export function getAllMarkdowns(): Promise<Markdown[]> {
   return new Promise((resolve, reject) => {
     db.all('SELECT * FROM markdowns ORDER BY updated_at DESC', (err, rows) => {
       if (err) {
+        console.error('getAllMarkdowns error:', err);
         reject(err);
       } else {
-        // 直接返回 content 字段，不尝试解析为 JSON
+        console.log('getAllMarkdowns found:', (rows as any[]).length, 'documents');
+        (rows as any[]).forEach(row => {
+          console.log('  - doc id:', row.id, 'title:', row.title, 'content length:', row.content?.length);
+        });
         const markdowns = (rows as any[]).map(row => ({
           ...row
         }));
