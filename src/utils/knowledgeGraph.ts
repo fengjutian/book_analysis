@@ -199,11 +199,19 @@ export function extractRelations(
 ): Relation[] {
   const relations: Relation[] = [];
   const sentences = text.split(/[。！？；\n]+/);
+  
+  console.log('extractRelations - text length:', text.length, 'sentences:', sentences.length, 'entities:', entities.length);
 
   for (const sentence of sentences) {
+    if (sentence.trim().length < 2) continue;
+    
     const sentenceEntities = entities.filter(e =>
       sentence.includes(e.name) && e.documentIds.includes(documentId)
     );
+
+    if (sentenceEntities.length >= 2) {
+      console.log('Found sentence with', sentenceEntities.length, 'entities:', sentence.substring(0, 50));
+    }
 
     if (sentenceEntities.length < 2) continue;
 
@@ -221,6 +229,8 @@ export function extractRelations(
         }
 
         const relationId = `${source.id}-${relationType}-${target.id}-${documentId}`;
+        
+        console.log('Creating relation:', source.name, '->', target.name, 'type:', relationType);
 
         relations.push({
           id: relationId,
@@ -233,6 +243,8 @@ export function extractRelations(
       }
     }
   }
+  
+  console.log('Total relations extracted:', relations.length);
 
   return relations;
 }

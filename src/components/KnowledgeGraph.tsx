@@ -62,9 +62,11 @@ const KnowledgeGraph: React.FC<KnowledgeGraphProps> = ({
         const result = analyzeDocument(md.content, docId, allEntities, allRelations);
         allEntities = result.entities;
         allRelations = result.relations;
+        console.log('Analyzed doc:', docId, 'entities:', result.entities.length, 'relations:', result.relations.length);
       }
     }
 
+    console.log('Total entities:', allEntities.length, 'Total relations:', allRelations.length);
     setEntities(allEntities);
     setRelations(allRelations);
   }, [markdowns]);
