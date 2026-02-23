@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Doc } from '@blocksuite/store';
+import { Doc, Job } from '@blocksuite/store';
 import { useEditor } from '../editor/context';
 
 interface Markdown {
@@ -25,6 +25,8 @@ const Sidebar = () => {
           const markdowns = await window.api.getAllMarkdowns();
           console.log('Loaded markdowns from local:', markdowns);
           
+          const job = new Job({ collection });
+          
           for (const md of markdowns) {
             const docId = `doc-${md.id}`;
             const existingDoc = [...collection.docs.values()].find(
@@ -33,16 +35,39 @@ const Sidebar = () => {
             
             if (!existingDoc) {
               console.log('Creating doc for markdown:', md.id, md.title);
-              const doc = collection.createDoc({ id: docId });
-              doc.load(() => {
-                const pageBlockId = doc.addBlock('affine:page', {});
-                doc.addBlock('affine:surface', {}, pageBlockId);
-                const noteId = doc.addBlock('affine:note', {}, pageBlockId);
-                doc.addBlock('affine:paragraph', { text: doc.Text('') }, noteId);
-              });
+              
+              if (md.content) {
+                try {
+                  const snapshot = JSON.parse(md.content);
+                  console.log('Parsed snapshot for doc:', docId, snapshot);
+                  
+                  if (snapshot && snapshot.type === 'page' && snapshot.blocks) {
+                    snapshot.meta = { ...snapshot.meta, id: docId };
+                    await job.snapshotToDoc(snapshot);
+                    console.log('Document restored from snapshot:', docId);
+                  } else {
+                    createEmptyDoc(docId);
+                  }
+                } catch (error) {
+                  console.error('Failed to parse snapshot:', error);
+                  createEmptyDoc(docId);
+                }
+              } else {
+                createEmptyDoc(docId);
+              }
             } else {
               console.log('Doc already exists:', docId);
             }
+          }
+          
+          function createEmptyDoc(id: string) {
+            const doc = collection.createDoc({ id });
+            doc.load(() => {
+              const pageBlockId = doc.addBlock('affine:page', {});
+              doc.addBlock('affine:surface', {}, pageBlockId);
+              const noteId = doc.addBlock('affine:note', {}, pageBlockId);
+              doc.addBlock('affine:paragraph', { text: doc.Text('') }, noteId);
+            });
           }
         } else {
           console.log('Simulating load local markdowns in development mode');
@@ -120,13 +145,12 @@ const Sidebar = () => {
   };
 
   const deleteDoc = async (doc: any, e: React.MouseEvent) => {
-    e.stopPropagation(); // 阻止冒泡，避免触发文档点击事件
+    e.stopPropagation();
     if (!collection || !editor) return;
     
     console.log('Deleting doc:', doc.id);
     
     try {
-      // 从本地数据库删除
       if (window.api) {
         const docId = doc.id.replace('doc-', '');
         if (!isNaN(parseInt(docId))) {
@@ -136,22 +160,20 @@ const Sidebar = () => {
         }
       }
       
-      // 从 BlockSuite 集合中删除
-      // 注意：BlockSuite 的 DocCollection 可能没有直接的删除方法
-      // 我们可以通过移除文档的方式来实现
-      // 这里我们先更新文档列表，过滤掉被删除的文档
-      const updatedDocs = [...collection.docs.values()]
+      const remainingDocs = [...collection.docs.values()]
         .map(blocks => blocks.getDoc())
         .filter(d => d.id !== doc.id);
-      setDocs(updatedDocs);
       
-      // 如果当前编辑的文档被删除，清空编辑器
-      if (editor.doc === doc) {
-        console.log('Current edited doc deleted, clearing editor');
-        // 注意：BlockSuite 编辑器可能需要一个默认文档
-        // 这里我们暂时不设置任何文档
-        // editor.doc = null;
+      if (editor.doc?.id === doc.id) {
+        const firstDoc = remainingDocs[0];
+        if (firstDoc && editor) {
+          editor.doc = firstDoc;
+        }
       }
+      
+      collection.removeDoc(doc.id);
+      
+      setDocs(remainingDocs);
     } catch (error) {
       console.error('Failed to delete document:', error);
     }
