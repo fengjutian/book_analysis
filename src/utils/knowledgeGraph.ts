@@ -73,17 +73,17 @@ export function getEntityColor(type: EntityType): string {
 }
 
 const CHINESE_PERSON_PATTERNS = [
-  /[\u4e00-\u9fa5]{2,4}(?=说|道|认为|表示|指出|强调|提到|发现|发明|创造|建立|创建)/g,
-  /(?<=作者|学者|教授|博士|先生|女士|老师|专家)[\u4e00-\u9fa5]{2,4}/g,
+  /[\u4e00-\u9fa5]{2,4}(?=说|道|认为|表示|指出|强调|提到|发现|发明|创造|建立|创建|提出|研究|分析)/g,
+  /(?<=作者|学者|教授|博士|先生|女士|老师|专家|经理|总监|总裁|董事长)[\u4e00-\u9fa5]{2,4}/g,
 ];
 
 const CHINESE_ORG_PATTERNS = [
-  /[\u4e00-\u9fa5]+(公司|集团|企业|机构|大学|学院|研究所|研究院|医院|政府|部门|组织|协会|学会|银行|基金)/g,
+  /[\u4e00-\u9fa5]{2,10}(公司|集团|企业|机构|大学|学院|研究所|研究院|医院|政府|部门|组织|协会|学会|银行|基金|中心|实验室)/g,
 ];
 
 const CHINESE_LOCATION_PATTERNS = [
-  /[\u4e00-\u9fa5]+(省|市|县|区|镇|村|岛|山|河|湖|海|洋|洲|国|地区)/g,
-  /(?<=位于|在|来自|前往|到达|去|到|离开|回到|来自|出生于|居住于|生活在)[\u4e00-\u9fa5]{2,10}/g,
+  /[\u4e00-\u9fa5]{2,10}(省|市|县|区|镇|村|岛|山|河|湖|海|洋|洲|国|地区|半岛|高原|盆地|平原)/g,
+  /(?<=位于|在|来自|前往|到达|去|到|离开|回到|出生于|居住于|生活在|前往|访问)[\u4e00-\u9fa5]{2,10}/g,
   /[\u4e00-\u9fa5]{2,10}(?=地区|一带|附近|周边|境内)/g,
 ];
 
@@ -239,6 +239,27 @@ export function extractRelations(
           type: relationType,
           documentId,
           context: sentence.substring(0, 100)
+        });
+      }
+    }
+  }
+  
+  const docEntities = entities.filter(e => e.documentIds.includes(documentId));
+  if (docEntities.length >= 2 && relations.length === 0) {
+    console.log('No sentence-level relations found, creating document-level relations');
+    for (let i = 0; i < docEntities.length; i++) {
+      for (let j = i + 1; j < docEntities.length; j++) {
+        const source = docEntities[i];
+        const target = docEntities[j];
+        const relationId = `${source.id}-${RelationType.Related}-${target.id}-${documentId}-doc`;
+        
+        relations.push({
+          id: relationId,
+          sourceId: source.id,
+          targetId: target.id,
+          type: RelationType.Related,
+          documentId,
+          context: '同文档关联'
         });
       }
     }
