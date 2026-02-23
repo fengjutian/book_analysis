@@ -141,19 +141,36 @@ const KnowledgeGraph: React.FC<KnowledgeGraphProps> = ({
     }
   }, [hoverNode, showLabels]);
 
-  const paintLink = useCallback((link: any, ctx: CanvasRenderingContext2D) => {
+  const paintLink = useCallback((link: any, ctx: CanvasRenderingContext2D, globalScale: number) => {
     const start = link.source;
     const end = link.target;
 
     if (!start || !end || !start.x || !end.x) return;
 
+    const isHovered = hoverNode && (hoverNode.id === start.id || hoverNode.id === end.id);
+
     ctx.beginPath();
     ctx.moveTo(start.x, start.y);
     ctx.lineTo(end.x, end.y);
-    ctx.strokeStyle = 'rgba(100, 100, 100, 0.3)';
-    ctx.lineWidth = 1;
+    
+    if (isHovered) {
+      ctx.strokeStyle = '#007bff';
+      ctx.lineWidth = 3;
+    } else {
+      ctx.strokeStyle = 'rgba(100, 100, 100, 0.5)';
+      ctx.lineWidth = 1.5;
+    }
     ctx.stroke();
-  }, []);
+
+    if (globalScale > 0.8) {
+      const midX = (start.x + end.x) / 2;
+      const midY = (start.y + end.y) / 2;
+      ctx.fillStyle = isHovered ? '#007bff' : 'rgba(100, 100, 100, 0.7)';
+      ctx.font = `${10 / globalScale}px sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+    }
+  }, [hoverNode]);
 
   const handleNodeClick3D = useCallback((node: any) => {
     if (!node) return;
@@ -280,8 +297,10 @@ const KnowledgeGraph: React.FC<KnowledgeGraphProps> = ({
               onNodeClick={handleNodeClick}
               onNodeHover={handleNodeHover}
               nodeRelSize={6}
-              linkDirectionalParticles={2}
-              linkDirectionalParticleWidth={1}
+              linkDirectionalArrowLength={4}
+              linkDirectionalArrowRelPos={1}
+              linkDirectionalArrowColor={() => '#666'}
+              linkCurvature={0.1}
               d3AlphaDecay={0.02}
               d3VelocityDecay={0.3}
               warmupTicks={100}
@@ -294,9 +313,12 @@ const KnowledgeGraph: React.FC<KnowledgeGraphProps> = ({
               nodeThreeObject={render3DNode}
               onNodeClick={handleNodeClick3D}
               nodeRelSize={6}
-              linkWidth={1}
-              linkOpacity={0.5}
-              linkColor={() => 'rgba(100,100,100,0.5)'}
+              linkWidth={2}
+              linkOpacity={0.8}
+              linkColor={() => '#888888'}
+              linkDirectionalParticles={2}
+              linkDirectionalParticleWidth={1.5}
+              linkDirectionalParticleColor={() => '#007bff'}
               d3AlphaDecay={0.02}
               d3VelocityDecay={0.3}
               warmupTicks={100}
