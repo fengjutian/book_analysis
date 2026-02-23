@@ -83,6 +83,20 @@ const CHINESE_ORG_PATTERNS = [
 
 const CHINESE_LOCATION_PATTERNS = [
   /[\u4e00-\u9fa5]+(省|市|县|区|镇|村|岛|山|河|湖|海|洋|洲|国|地区)/g,
+  /(?<=位于|在|来自|前往|到达|去|到|离开|回到|来自|出生于|居住于|生活在)[\u4e00-\u9fa5]{2,10}/g,
+  /[\u4e00-\u9fa5]{2,10}(?=地区|一带|附近|周边|境内)/g,
+];
+
+const COMMON_LOCATIONS = [
+  '北京', '上海', '广州', '深圳', '杭州', '南京', '苏州', '成都', '重庆', '武汉',
+  '西安', '天津', '青岛', '大连', '厦门', '宁波', '无锡', '长沙', '郑州', '济南',
+  '福州', '哈尔滨', '沈阳', '长春', '昆明', '贵阳', '南宁', '海口', '兰州', '银川',
+  '西宁', '乌鲁木齐', '拉萨', '呼和浩特', '石家庄', '太原', '合肥', '南昌', '台北',
+  '香港', '澳门', '中国', '美国', '日本', '韩国', '英国', '法国', '德国', '意大利',
+  '俄罗斯', '加拿大', '澳大利亚', '巴西', '印度', '新加坡', '泰国', '越南', '马来西亚',
+  '长城', '故宫', '天坛', '颐和园', '圆明园', '兵马俑', '敦煌', '泰山', '华山', '黄山',
+  '峨眉山', '九寨沟', '张家界', '桂林', '丽江', '三亚', '西湖', '太湖', '洞庭湖', '鄱阳湖',
+  '长江', '黄河', '珠江', '松花江', '淮河', '汉江', '湘江', '赣江', '闽江', '钱塘江',
 ];
 
 const CHINESE_DATE_PATTERNS = [
@@ -137,6 +151,28 @@ export function extractEntities(text: string, documentId: string): Entity[] {
             frequency: 1
           });
         }
+      }
+    }
+  }
+
+  for (const location of COMMON_LOCATIONS) {
+    if (text.includes(location)) {
+      const entityId = `${EntityType.Location}-${location}`;
+      const existing = entityMap.get(entityId);
+
+      if (existing) {
+        existing.frequency++;
+        if (!existing.documentIds.includes(documentId)) {
+          existing.documentIds.push(documentId);
+        }
+      } else {
+        entityMap.set(entityId, {
+          id: entityId,
+          name: location,
+          type: EntityType.Location,
+          documentIds: [documentId],
+          frequency: 1
+        });
       }
     }
   }
