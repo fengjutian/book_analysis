@@ -319,8 +319,10 @@ export function analyzeDocument(
   existingRelations: Relation[] = []
 ): { entities: Entity[]; relations: Relation[] } {
   const textContent = extractTextContent(content);
+  console.log('analyzeDocument - documentId:', documentId, 'textContent:', textContent.substring(0, 200));
 
   const newEntities = extractEntities(textContent, documentId);
+  console.log('newEntities:', newEntities.map(e => ({ name: e.name, type: e.type })));
   const entities = mergeEntities(existingEntities, newEntities);
 
   const newRelations = extractRelations(textContent, entities, documentId);
