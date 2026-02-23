@@ -8,12 +8,12 @@ electron.contextBridge.exposeInMainWorld("api", {
   // 创建 Markdown 文件
   createMarkdown: (markdown) => {
     console.log("preload createMarkdown:", markdown);
-    return electron.ipcRenderer.invoke("create-markdown", markdown.title, markdown.content);
+    return electron.ipcRenderer.invoke("create-markdown", markdown);
   },
   // 更新 Markdown 文件
   updateMarkdown: (id, markdown) => {
     console.log("preload updateMarkdown:", { id, markdown });
-    return electron.ipcRenderer.invoke("update-markdown", id, markdown.title, markdown.content);
+    return electron.ipcRenderer.invoke("update-markdown", { id, ...markdown });
   },
   // 删除 Markdown 文件
   deleteMarkdown: (id) => electron.ipcRenderer.invoke("delete-markdown", id),

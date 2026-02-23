@@ -18,12 +18,12 @@ contextBridge.exposeInMainWorld('api', {
   // 创建 Markdown 文件
   createMarkdown: (markdown: { title: string; content: string }) => {
     console.log('preload createMarkdown:', markdown);
-    return ipcRenderer.invoke('create-markdown', markdown.title, markdown.content);
+    return ipcRenderer.invoke('create-markdown', markdown);
   },
   // 更新 Markdown 文件
   updateMarkdown: (id: number, markdown: { title: string; content: string }) => {
     console.log('preload updateMarkdown:', { id, markdown });
-    return ipcRenderer.invoke('update-markdown', id, markdown.title, markdown.content);
+    return ipcRenderer.invoke('update-markdown', { id, ...markdown });
   },
   // 删除 Markdown 文件
   deleteMarkdown: (id: number) => ipcRenderer.invoke('delete-markdown', id),

@@ -76,14 +76,15 @@ ipcMain.handle('get-markdown-by-id', (_event, id) => {
 });
 
 // 创建 Markdown 文件
-ipcMain.handle('create-markdown', (_event, title, content) => {
-  return createMarkdown(title, content);
+ipcMain.handle('create-markdown', (_event, data) => {
+  console.log('IPC create-markdown received:', data);
+  return createMarkdown(data.title, data.content);
 });
 
 // 更新 Markdown 文件
-ipcMain.handle('update-markdown', (_event, id, title, content) => {
-  console.log('IPC update-markdown received:', { id, title, contentType: typeof content });
-  return updateMarkdown(id, title, content);
+ipcMain.handle('update-markdown', (_event, data) => {
+  console.log('IPC update-markdown received:', data);
+  return updateMarkdown(data.id, data.title, data.content);
 });
 
 // 删除 Markdown 文件
