@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import ForceGraph2D from 'react-force-graph-2d';
+import ForceGraph3D from 'react-force-graph-3d';
+import SpriteText from 'three-spritetext';
 import {
   GraphData,
   GraphNode,
@@ -22,6 +24,8 @@ interface KnowledgeGraphProps {
   selectedDocId: string | null;
   onNodeClick?: (node: GraphNode) => void;
 }
+
+type ViewMode = '2d' | '3d';
 
 const ENTITY_TYPE_LABELS: Record<EntityType, string> = {
   [EntityType.Person]: '人物',
@@ -46,6 +50,7 @@ const KnowledgeGraph: React.FC<KnowledgeGraphProps> = ({
   const [filterType, setFilterType] = useState<EntityType | 'all'>('all');
   const [showLabels, setShowLabels] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [viewMode, setViewMode] = useState<ViewMode>('2d');
 
   useEffect(() => {
     let allEntities: Entity[] = [];
@@ -150,6 +155,32 @@ const KnowledgeGraph: React.FC<KnowledgeGraphProps> = ({
     ctx.stroke();
   }, []);
 
+  const handleNodeClick3D = useCallback((node: any) => {
+    if (!node) return;
+    if (onNodeClick) {
+      onNodeClick(node);
+    }
+    if (graphRef.current) {
+      const distance = 120;
+      const distRatio = 1 + distance / Math.hypot(node.x, node.y, node.z);
+      graphRef.current.cameraPosition(
+        { x: node.x * distRatio, y: node.y * distRatio, z: node.z * distRatio },
+        node,
+        2000
+      );
+    }
+  }, [onNodeClick]);
+
+  const render3DNode = useCallback((node: any) => {
+    const sprite = new SpriteText(node.name);
+    sprite.color = node.color;
+    sprite.textHeight = 8;
+    sprite.backgroundColor = 'rgba(255,255,255,0.8)';
+    sprite.padding = 2;
+    sprite.borderRadius = 3;
+    return sprite;
+  }, []);
+
   const stats = useMemo(() => {
     const typeCounts: Record<EntityType, number> = {
       [EntityType.Person]: 0,
@@ -195,16 +226,33 @@ const KnowledgeGraph: React.FC<KnowledgeGraphProps> = ({
           </select>
         </div>
 
-        <div className="control-group">
-          <label>
-            <input
-              type="checkbox"
-              checked={showLabels}
-              onChange={(e) => setShowLabels(e.target.checked)}
-            />
-            显示标签
-          </label>
+        <div className="control-group view-toggle">
+          <button
+            className={`toggle-btn ${viewMode === '2d' ? 'active' : ''}`}
+            onClick={() => setViewMode('2d')}
+          >
+            2D
+          </button>
+          <button
+            className={`toggle-btn ${viewMode === '3d' ? 'active' : ''}`}
+            onClick={() => setViewMode('3d')}
+          >
+            3D
+          </button>
         </div>
+
+        {viewMode === '2d' && (
+          <div className="control-group">
+            <label>
+              <input
+                type="checkbox"
+                checked={showLabels}
+                onChange={(e) => setShowLabels(e.target.checked)}
+              />
+              显示标签
+            </label>
+          </div>
+        )}
       </div>
 
       <div className="graph-stats">
@@ -223,21 +271,38 @@ const KnowledgeGraph: React.FC<KnowledgeGraphProps> = ({
 
       <div className="graph-canvas">
         {graphData.nodes.length > 0 ? (
-          <ForceGraph2D
-            ref={graphRef}
-            graphData={graphData}
-            nodeCanvasObject={paintNode}
-            linkCanvasObject={paintLink}
-            onNodeClick={handleNodeClick}
-            onNodeHover={handleNodeHover}
-            nodeRelSize={6}
-            linkDirectionalParticles={2}
-            linkDirectionalParticleWidth={1}
-            d3AlphaDecay={0.02}
-            d3VelocityDecay={0.3}
-            warmupTicks={100}
-            cooldownTicks={100}
-          />
+          viewMode === '2d' ? (
+            <ForceGraph2D
+              ref={graphRef}
+              graphData={graphData}
+              nodeCanvasObject={paintNode}
+              linkCanvasObject={paintLink}
+              onNodeClick={handleNodeClick}
+              onNodeHover={handleNodeHover}
+              nodeRelSize={6}
+              linkDirectionalParticles={2}
+              linkDirectionalParticleWidth={1}
+              d3AlphaDecay={0.02}
+              d3VelocityDecay={0.3}
+              warmupTicks={100}
+              cooldownTicks={100}
+            />
+          ) : (
+            <ForceGraph3D
+              ref={graphRef}
+              graphData={graphData}
+              nodeThreeObject={render3DNode}
+              onNodeClick={handleNodeClick3D}
+              nodeRelSize={6}
+              linkWidth={1}
+              linkOpacity={0.5}
+              linkColor={() => 'rgba(100,100,100,0.5)'}
+              d3AlphaDecay={0.02}
+              d3VelocityDecay={0.3}
+              warmupTicks={100}
+              cooldownTicks={100}
+            />
+          )
         ) : (
           <div className="no-data">
             <p>暂无数据</p>
@@ -246,7 +311,7 @@ const KnowledgeGraph: React.FC<KnowledgeGraphProps> = ({
         )}
       </div>
 
-      {hoverNode && (
+      {hoverNode && viewMode === '2d' && (
         <div className="node-tooltip">
           <h4>{hoverNode.name}</h4>
           <p>类型: {ENTITY_TYPE_LABELS[hoverNode.type]}</p>
