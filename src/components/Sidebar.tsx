@@ -2,15 +2,11 @@ import { useEffect, useState } from 'react';
 import { Doc, Job } from '@blocksuite/store';
 import { useEditor } from '../editor/context';
 
-interface Markdown {
-  id: number;
-  title: string;
-  content: string;
-  created_at: string;
-  updated_at: string;
+interface SidebarProps {
+  onDocSelect?: (docId: string | null) => void;
 }
 
-const Sidebar = () => {
+const Sidebar: React.FC<SidebarProps> = ({ onDocSelect }) => {
   const { collection, editor } = useEditor()!;
   const [docs, setDocs] = useState<Doc[]>([]);
 
@@ -68,7 +64,7 @@ const Sidebar = () => {
               const pageBlockId = doc.addBlock('affine:page', {});
               doc.addBlock('affine:surface', {}, pageBlockId);
               const noteId = doc.addBlock('affine:note', {}, pageBlockId);
-              doc.addBlock('affine:paragraph', { text: doc.Text('') }, noteId);
+              doc.addBlock('affine:paragraph', { text: new doc.Text('') }, noteId);
             });
           }
         } else {
@@ -118,7 +114,7 @@ const Sidebar = () => {
             const pageBlockId = newDoc.addBlock('affine:page', {});
             newDoc.addBlock('affine:surface', {}, pageBlockId);
             const noteId = newDoc.addBlock('affine:note', {}, pageBlockId);
-            newDoc.addBlock('affine:paragraph', { text: newDoc.Text('Start writing here...') }, noteId);
+            newDoc.addBlock('affine:paragraph', { text: new newDoc.Text('Start writing here...') }, noteId);
           });
           
           if (editor) {
@@ -133,7 +129,7 @@ const Sidebar = () => {
           const pageBlockId = newDoc.addBlock('affine:page', {});
           newDoc.addBlock('affine:surface', {}, pageBlockId);
           const noteId = newDoc.addBlock('affine:note', {}, pageBlockId);
-          newDoc.addBlock('affine:paragraph', { text: newDoc.Text('Start writing here...') }, noteId);
+          newDoc.addBlock('affine:paragraph', { text: new newDoc.Text('Start writing here...') }, noteId);
         });
         
         if (editor) {
@@ -197,6 +193,7 @@ const Sidebar = () => {
               className="doc-item-title"
               onClick={() => {
                 if (editor) editor.doc = doc;
+                if (onDocSelect) onDocSelect(doc.id);
                 const docs = [...collection.docs.values()].map(blocks =>
                   blocks.getDoc()
                 );

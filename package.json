@@ -11,12 +11,13 @@
   },
   "dependencies": {
     "@blocksuite/blocks": "0.15.0-canary-202406291027-8aed732",
+    "@blocksuite/editor": "^0.10.0",
     "@blocksuite/presets": "0.15.0-canary-202406291027-8aed732",
     "@blocksuite/store": "0.15.0-canary-202406291027-8aed732",
-    "@blocksuite/editor": "^0.10.0",
     "better-sqlite3": "^12.6.2",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
+    "react-force-graph-2d": "^1.29.1",
     "react-markdown": "^10.1.0",
     "sqlite3": "^5.1.7"
   },
