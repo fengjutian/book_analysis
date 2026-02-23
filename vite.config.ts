@@ -53,6 +53,11 @@ export default defineConfig({
               fileName: () => 'preload.cjs',
             },
             outDir: 'dist-electron',
+            rollupOptions: {
+              output: {
+                entryFileNames: 'preload.cjs',
+              },
+            },
           },
         },
       },
