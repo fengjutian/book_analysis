@@ -121,6 +121,7 @@ const KnowledgeGraph: React.FC<KnowledgeGraphProps> = ({
   onNodeClick
 }) => {
   const graphRef = useRef<any>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const [graphData, setGraphData] = useState<GraphData>({ nodes: [], links: [] });
   const [entities, setEntities] = useState<Entity[]>([]);
   const [relations, setRelations] = useState<Relation[]>([]);
@@ -129,6 +130,7 @@ const KnowledgeGraph: React.FC<KnowledgeGraphProps> = ({
   const [showLabels, setShowLabels] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [viewMode, setViewMode] = useState<ViewMode>('2d');
+  const [dimensions, setDimensions] = useState({ width: 800, height: 600 });
 
   useEffect(() => {
     let allEntities: Entity[] = [];
@@ -182,6 +184,31 @@ const KnowledgeGraph: React.FC<KnowledgeGraphProps> = ({
     const data = buildGraphData(filteredEntities, filteredRelations);
     setGraphData(data);
   }, [entities, relations, selectedDocId, filterType, searchTerm]);
+
+  // 更新画布尺寸
+  useEffect(() => {
+    const updateDimensions = () => {
+      if (containerRef.current) {
+        const { width, height } = containerRef.current.getBoundingClientRect();
+        setDimensions({ 
+          width: Math.max(100, width), 
+          height: Math.max(100, height) 
+        });
+      }
+    };
+
+    updateDimensions();
+    const resizeObserver = new ResizeObserver(updateDimensions);
+    if (containerRef.current) {
+      resizeObserver.observe(containerRef.current);
+    }
+
+    window.addEventListener('resize', updateDimensions);
+    return () => {
+      window.removeEventListener('resize', updateDimensions);
+      resizeObserver.disconnect();
+    };
+  }, []);
 
   const handleNodeClick = useCallback((node: any) => {
     if (onNodeClick) {
@@ -525,7 +552,7 @@ const KnowledgeGraph: React.FC<KnowledgeGraphProps> = ({
         ))}
       </div>
 
-      <div className="graph-canvas">
+      <div className="graph-canvas" ref={containerRef}>
         {graphData.nodes.length > 0 ? (
           viewMode === '2d' ? (
             <ForceGraph2D
@@ -544,6 +571,8 @@ const KnowledgeGraph: React.FC<KnowledgeGraphProps> = ({
               d3VelocityDecay={0.3}
               warmupTicks={100}
               cooldownTicks={100}
+              width={dimensions.width}
+              height={dimensions.height}
             />
           ) : (
             <ForceGraph3D
@@ -569,6 +598,8 @@ const KnowledgeGraph: React.FC<KnowledgeGraphProps> = ({
               d3VelocityDecay={0.4}
               warmupTicks={120}
               cooldownTicks={120}
+              width={dimensions.width}
+              height={dimensions.height}
             />
           )
         ) : (
