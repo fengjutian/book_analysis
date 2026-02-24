@@ -28,6 +28,12 @@ contextBridge.exposeInMainWorld('api', {
   // 删除 Markdown 文件
   deleteMarkdown: (id: number) => ipcRenderer.invoke('delete-markdown', id),
 
+  // 导出单个 Markdown 文件
+  exportMarkdown: (id: number, fileName?: string) => ipcRenderer.invoke('export-markdown', { id, fileName }),
+
+  // 导出所有 Markdown 文件
+  exportAllMarkdowns: (fileName?: string) => ipcRenderer.invoke('export-all-markdowns', { fileName }),
+
   // 通用 IPC 方法
   on(...args: Parameters<typeof ipcRenderer.on>) {
     const [channel, listener] = args

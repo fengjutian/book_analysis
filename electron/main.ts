@@ -1,5 +1,6 @@
-import { app, BrowserWindow, ipcMain } from 'electron'
+import { app, BrowserWindow, ipcMain, dialog } from 'electron'
 import path from 'node:path'
+import fs from 'node:fs'
 import { initDatabase, getAllMarkdowns, getMarkdownById, createMarkdown, updateMarkdown, deleteMarkdown } from './db'
 
 // 使用 import.meta.url 来获取当前模块的路径
@@ -92,4 +93,68 @@ ipcMain.handle('update-markdown', (_event, data) => {
 // 删除 Markdown 文件
 ipcMain.handle('delete-markdown', (_event, id) => {
   return deleteMarkdown(id);
+});
+
+// 导出单个 Markdown 文件
+ipcMain.handle('export-markdown', async (_event, { id, fileName }) => {
+  const markdown = await getMarkdownById(id);
+  if (!markdown) {
+    throw new Error(`Markdown with ID ${id} not found`);
+  }
+
+  const { canceled, filePath } = await dialog.showSaveDialog(win!, {
+    defaultPath: fileName || `markdown-${id}.json`,
+    filters: [
+      { name: 'JSON Files', extensions: ['json'] },
+      { name: 'All Files', extensions: ['*'] }
+    ]
+  });
+
+  if (canceled || !filePath) {
+    return { success: false, message: 'Save dialog canceled' };
+  }
+
+  try {
+    // 将内容转换为 JSON 字符串（如果已经是字符串则保持原样）
+    const content = typeof markdown.content === 'string' ? markdown.content : JSON.stringify(markdown.content);
+    const exportData = {
+      ...markdown,
+      content
+    };
+    fs.writeFileSync(filePath, JSON.stringify(exportData, null, 2), 'utf8');
+    return { success: true, filePath };
+  } catch (error) {
+    console.error('Failed to export markdown:', error);
+    throw new Error(`Failed to export markdown: ${error.message}`);
+  }
+});
+
+// 导出所有 Markdown 文件
+ipcMain.handle('export-all-markdowns', async (_event, { fileName }) => {
+  const markdowns = await getAllMarkdowns();
+
+  const { canceled, filePath } = await dialog.showSaveDialog(win!, {
+    defaultPath: fileName || 'all-markdowns.json',
+    filters: [
+      { name: 'JSON Files', extensions: ['json'] },
+      { name: 'All Files', extensions: ['*'] }
+    ]
+  });
+
+  if (canceled || !filePath) {
+    return { success: false, message: 'Save dialog canceled' };
+  }
+
+  try {
+    // 处理每个文档的内容字段
+    const exportData = markdowns.map(md => ({
+      ...md,
+      content: typeof md.content === 'string' ? md.content : JSON.stringify(md.content)
+    }));
+    fs.writeFileSync(filePath, JSON.stringify(exportData, null, 2), 'utf8');
+    return { success: true, filePath, count: markdowns.length };
+  } catch (error) {
+    console.error('Failed to export all markdowns:', error);
+    throw new Error(`Failed to export all markdowns: ${error.message}`);
+  }
 });

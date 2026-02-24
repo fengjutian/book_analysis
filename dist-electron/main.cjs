@@ -2,6 +2,7 @@
 Object.defineProperty(exports, Symbol.toStringTag, { value: "Module" });
 const electron = require("electron");
 const path$1 = require("node:path");
+const fs = require("node:fs");
 const sqlite3 = require("sqlite3");
 const path = require("path");
 function _interopNamespaceDefault(e) {
@@ -195,6 +196,58 @@ electron.ipcMain.handle("update-markdown", (_event, data) => {
 });
 electron.ipcMain.handle("delete-markdown", (_event, id) => {
   return deleteMarkdown(id);
+});
+electron.ipcMain.handle("export-markdown", async (_event, { id, fileName }) => {
+  const markdown = await getMarkdownById(id);
+  if (!markdown) {
+    throw new Error(`Markdown with ID ${id} not found`);
+  }
+  const { canceled, filePath } = await electron.dialog.showSaveDialog(win, {
+    defaultPath: fileName || `markdown-${id}.json`,
+    filters: [
+      { name: "JSON Files", extensions: ["json"] },
+      { name: "All Files", extensions: ["*"] }
+    ]
+  });
+  if (canceled || !filePath) {
+    return { success: false, message: "Save dialog canceled" };
+  }
+  try {
+    const content = typeof markdown.content === "string" ? markdown.content : JSON.stringify(markdown.content);
+    const exportData = {
+      ...markdown,
+      content
+    };
+    fs.writeFileSync(filePath, JSON.stringify(exportData, null, 2), "utf8");
+    return { success: true, filePath };
+  } catch (error) {
+    console.error("Failed to export markdown:", error);
+    throw new Error(`Failed to export markdown: ${error.message}`);
+  }
+});
+electron.ipcMain.handle("export-all-markdowns", async (_event, { fileName }) => {
+  const markdowns = await getAllMarkdowns();
+  const { canceled, filePath } = await electron.dialog.showSaveDialog(win, {
+    defaultPath: fileName || "all-markdowns.json",
+    filters: [
+      { name: "JSON Files", extensions: ["json"] },
+      { name: "All Files", extensions: ["*"] }
+    ]
+  });
+  if (canceled || !filePath) {
+    return { success: false, message: "Save dialog canceled" };
+  }
+  try {
+    const exportData = markdowns.map((md) => ({
+      ...md,
+      content: typeof md.content === "string" ? md.content : JSON.stringify(md.content)
+    }));
+    fs.writeFileSync(filePath, JSON.stringify(exportData, null, 2), "utf8");
+    return { success: true, filePath, count: markdowns.length };
+  } catch (error) {
+    console.error("Failed to export all markdowns:", error);
+    throw new Error(`Failed to export all markdowns: ${error.message}`);
+  }
 });
 exports.MAIN_DIST = MAIN_DIST;
 exports.RENDERER_DIST = RENDERER_DIST;

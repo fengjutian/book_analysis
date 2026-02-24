@@ -14,5 +14,7 @@ interface Window {
     createMarkdown: (markdown: { title: string; content: string }) => Promise<Markdown>;
     updateMarkdown: (id: number, markdown: { title: string; content: string }) => Promise<Markdown | undefined>;
     deleteMarkdown: (id: number) => Promise<boolean>;
+    exportMarkdown: (id: number, fileName?: string) => Promise<{ success: boolean; filePath?: string; message?: string }>;
+    exportAllMarkdowns: (fileName?: string) => Promise<{ success: boolean; filePath?: string; message?: string; count?: number }>;
   };
 }
