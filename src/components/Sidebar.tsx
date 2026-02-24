@@ -180,7 +180,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onDocSelect }) => {
   return (
     <div className="sidebar">
       <div className="header">
-        <div>All Docs</div>
+        {/* <div>All Docs</div> */}
         <button className="create-btn" onClick={createNewDoc}>+ New</button>
       </div>
       <div className="doc-list">
