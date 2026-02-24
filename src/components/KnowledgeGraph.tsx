@@ -13,6 +13,84 @@ import {
   getEntityColor
 } from '../utils/knowledgeGraph';
 
+// 辅助函数：调整颜色亮度
+const adjustColor = (color: string, amount: number): string => {
+  // 处理十六进制颜色（带或不带alpha）
+  if (color.startsWith('#')) {
+    const hex = color.slice(1);
+    let r, g, b, a = 255;
+    
+    if (hex.length === 6) {
+      r = parseInt(hex.slice(0, 2), 16);
+      g = parseInt(hex.slice(2, 4), 16);
+      b = parseInt(hex.slice(4, 6), 16);
+    } else if (hex.length === 8) {
+      r = parseInt(hex.slice(0, 2), 16);
+      g = parseInt(hex.slice(2, 4), 16);
+      b = parseInt(hex.slice(4, 6), 16);
+      a = parseInt(hex.slice(6, 8), 16);
+    } else if (hex.length === 3) {
+      r = parseInt(hex[0] + hex[0], 16);
+      g = parseInt(hex[1] + hex[1], 16);
+      b = parseInt(hex[2] + hex[2], 16);
+    } else {
+      return color;
+    }
+    
+    r = Math.max(0, Math.min(255, r + amount));
+    g = Math.max(0, Math.min(255, g + amount));
+    b = Math.max(0, Math.min(255, b + amount));
+    
+    const rHex = r.toString(16).padStart(2, '0');
+    const gHex = g.toString(16).padStart(2, '0');
+    const bHex = b.toString(16).padStart(2, '0');
+    const aHex = a.toString(16).padStart(2, '0');
+    
+    return hex.length === 8 ? `#${rHex}${gHex}${bHex}${aHex}` : `#${rHex}${gHex}${bHex}`;
+  }
+  return color;
+};
+
+// 辅助函数：为十六进制颜色添加透明度
+const addAlpha = (color: string, alpha: number): string => {
+  if (color.startsWith('#')) {
+    const hex = color.slice(1);
+    let r, g, b;
+    
+    if (hex.length === 6) {
+      r = hex.slice(0, 2);
+      g = hex.slice(2, 4);
+      b = hex.slice(4, 6);
+    } else if (hex.length === 3) {
+      r = hex[0] + hex[0];
+      g = hex[1] + hex[1];
+      b = hex[2] + hex[2];
+    } else {
+      return color;
+    }
+    
+    const aHex = Math.round(alpha * 255).toString(16).padStart(2, '0');
+    return `#${r}${g}${b}${aHex}`;
+  }
+  return color;
+};
+
+// Canvas roundRect polyfill
+if (!CanvasRenderingContext2D.prototype.roundRect) {
+  CanvasRenderingContext2D.prototype.roundRect = function(x: number, y: number, w: number, h: number, r: number) {
+    if (w < 2 * r) r = w / 2;
+    if (h < 2 * r) r = h / 2;
+    this.beginPath();
+    this.moveTo(x + r, y);
+    this.arcTo(x + w, y, x + w, y + h, r);
+    this.arcTo(x + w, y + h, x, y + h, r);
+    this.arcTo(x, y + h, x, y, r);
+    this.arcTo(x, y, x + w, y, r);
+    this.closePath();
+    return this;
+  };
+}
+
 interface Markdown {
   id: number;
   title: string;
@@ -113,32 +191,97 @@ const KnowledgeGraph: React.FC<KnowledgeGraphProps> = ({
 
   const handleNodeHover = useCallback((node: any) => {
     setHoverNode(node);
-    if (graphRef.current) {
+    if (graphRef.current && node && typeof node.x === 'number' && typeof node.y === 'number' && isFinite(node.x) && isFinite(node.y)) {
       graphRef.current.centerAt(node.x, node.y, 1000);
       graphRef.current.zoom(2, 1000);
     }
   }, []);
 
   const paintNode = useCallback((node: any, ctx: CanvasRenderingContext2D, globalScale: number) => {
-    const size = node.val * 2;
-    const fontSize = 12 / globalScale;
+    // 检查节点坐标是否有效
+    if (typeof node.x !== 'number' || typeof node.y !== 'number' || !isFinite(node.x) || !isFinite(node.y)) {
+      return;
+    }
+    
+    // 确保globalScale为正数
+    const safeGlobalScale = globalScale > 0 ? globalScale : 1;
+    
+    const size = Math.max(2, (node.val || 1) * 2); // 最小大小为2
+    const fontSize = 12 / safeGlobalScale;
+    const isHovered = hoverNode === node;
+    const nodeColor = node.color || '#94a3b8';
 
+    // 检查size是否有效
+    if (!isFinite(size) || size <= 0) {
+      return;
+    }
+    
+    // 创建节点渐变背景
+    const gradient = ctx.createRadialGradient(
+      node.x - size * 0.3,
+      node.y - size * 0.3,
+      0,
+      node.x,
+      node.y,
+      size
+    );
+    gradient.addColorStop(0, nodeColor);
+    gradient.addColorStop(1, adjustColor(nodeColor, -30));
+
+    // 绘制节点阴影
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.2)';
+    ctx.shadowBlur = isHovered ? 15 : 8;
+    ctx.shadowOffsetX = 0;
+    ctx.shadowOffsetY = isHovered ? 4 : 2;
+
+    // 绘制节点主体
     ctx.beginPath();
     ctx.arc(node.x, node.y, size, 0, 2 * Math.PI);
-    ctx.fillStyle = node.color;
+    ctx.fillStyle = gradient;
     ctx.fill();
 
-    if (hoverNode === node) {
-      ctx.strokeStyle = '#333';
-      ctx.lineWidth = 2;
+    // 绘制节点边框
+    if (isHovered) {
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 2.5;
+      ctx.stroke();
+      
+      // 内发光效果
+      ctx.beginPath();
+      ctx.arc(node.x, node.y, size - 1, 0, 2 * Math.PI);
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+      ctx.lineWidth = 1;
       ctx.stroke();
     }
 
-    if (showLabels && globalScale > 0.5) {
-      ctx.fillStyle = '#333';
-      ctx.font = `${fontSize}px sans-serif`;
+    // 重置阴影
+    ctx.shadowColor = 'transparent';
+    ctx.shadowBlur = 0;
+
+    // 绘制标签
+    if (showLabels && safeGlobalScale > 0.5) {
+      ctx.fillStyle = isHovered ? '#1e293b' : '#334155';
+      ctx.font = `${fontSize}px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'top';
+      
+      // 标签背景
+      if (isHovered) {
+        const textWidth = ctx.measureText(node.name).width;
+        const padding = 6;
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
+        ctx.beginPath();
+        ctx.roundRect(
+          node.x - textWidth / 2 - padding,
+          node.y + size + 2 - padding / 2,
+          textWidth + padding * 2,
+          fontSize + padding,
+          6
+        );
+        ctx.fill();
+        ctx.fillStyle = '#1e293b';
+      }
+      
       ctx.fillText(node.name, node.x, node.y + size + 2);
     }
   }, [hoverNode, showLabels]);
@@ -147,30 +290,113 @@ const KnowledgeGraph: React.FC<KnowledgeGraphProps> = ({
     const start = link.source;
     const end = link.target;
 
-    if (!start || !end || !start.x || !end.x) return;
+    // 检查节点坐标是否有效
+    if (!start || !end || 
+        typeof start.x !== 'number' || typeof start.y !== 'number' || 
+        typeof end.x !== 'number' || typeof end.y !== 'number' ||
+        !isFinite(start.x) || !isFinite(start.y) || 
+        !isFinite(end.x) || !isFinite(end.y)) {
+      return;
+    }
 
     const isHovered = hoverNode && (hoverNode.id === start.id || hoverNode.id === end.id);
+    const linkWidth = isHovered ? 3.5 : 1.8;
+    const alpha = isHovered ? 0.9 : 0.6;
 
+    // 创建链接渐变
+    const gradient = ctx.createLinearGradient(start.x, start.y, end.x, end.y);
+    const startColor = start.color || '#94a3b8';
+    const endColor = end.color || '#cbd5e1';
+    gradient.addColorStop(0, addAlpha(adjustColor(startColor, 20), alpha));
+    gradient.addColorStop(1, addAlpha(adjustColor(endColor, 20), alpha));
+
+    // 绘制链接阴影
+    if (isHovered) {
+      ctx.shadowColor = 'rgba(59, 130, 246, 0.5)';
+      ctx.shadowBlur = 10;
+      ctx.shadowOffsetX = 0;
+      ctx.shadowOffsetY = 0;
+    }
+
+    // 绘制链接线
     ctx.beginPath();
     ctx.moveTo(start.x, start.y);
     ctx.lineTo(end.x, end.y);
-    
-    if (isHovered) {
-      ctx.strokeStyle = '#007bff';
-      ctx.lineWidth = 3;
-    } else {
-      ctx.strokeStyle = 'rgba(100, 100, 100, 0.5)';
-      ctx.lineWidth = 1.5;
-    }
+    ctx.strokeStyle = gradient;
+    ctx.lineWidth = linkWidth;
+    ctx.lineCap = 'round';
     ctx.stroke();
 
-    if (globalScale > 0.8) {
+    // 重置阴影
+    ctx.shadowColor = 'transparent';
+    ctx.shadowBlur = 0;
+
+    // 绘制链接箭头（在较大缩放级别时）
+    if (globalScale > 0.7) {
+      const dx = end.x - start.x;
+      const dy = end.y - start.y;
+      const length = Math.sqrt(dx * dx + dy * dy);
+      if (length > 0 && isFinite(length)) {
+        const unitX = dx / length;
+        const unitY = dy / length;
+        const arrowLength = 8 / globalScale;
+        const arrowWidth = 6 / globalScale;
+        
+        // 箭头位置（从终点向起点偏移一点）
+        const arrowX = end.x - unitX * ((end.val || 1) * 2 + 5);
+        const arrowY = end.y - unitY * ((end.val || 1) * 2 + 5);
+        
+        // 检查箭头坐标是否有效
+        if (isFinite(arrowX) && isFinite(arrowY)) {
+          // 绘制箭头
+          ctx.beginPath();
+          ctx.moveTo(arrowX, arrowY);
+          ctx.lineTo(
+            arrowX - unitX * arrowLength + unitY * arrowWidth,
+            arrowY - unitY * arrowLength - unitX * arrowWidth
+          );
+          ctx.lineTo(
+            arrowX - unitX * arrowLength - unitY * arrowWidth,
+            arrowY - unitY * arrowLength + unitX * arrowWidth
+          );
+          ctx.closePath();
+          
+          ctx.fillStyle = isHovered ? '#3b82f6' : '#94a3b8';
+          ctx.fill();
+        }
+      }
+    }
+
+    // 绘制链接类型标签（在较大缩放级别时）
+    if (globalScale > 1.2 && link.type && link.type !== 'Related') {
       const midX = (start.x + end.x) / 2;
       const midY = (start.y + end.y) / 2;
-      ctx.fillStyle = isHovered ? '#007bff' : 'rgba(100, 100, 100, 0.7)';
-      ctx.font = `${10 / globalScale}px sans-serif`;
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
+      
+      // 检查中点坐标是否有效
+      if (isFinite(midX) && isFinite(midY)) {
+        // 标签背景
+        const label = link.type;
+        ctx.font = `${10 / globalScale}px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif`;
+        const textWidth = ctx.measureText(label).width;
+        const padding = 4 / globalScale;
+        
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
+        ctx.beginPath();
+        ctx.roundRect(
+          midX - textWidth / 2 - padding,
+          midY - (10 / globalScale) / 2 - padding,
+          textWidth + padding * 2,
+          10 / globalScale + padding * 2,
+          4 / globalScale
+        );
+        ctx.fill();
+        
+        // 标签文字
+        ctx.fillStyle = isHovered ? '#1e293b' : '#475569';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(label, midX, midY);
+      }
     }
   }, [hoverNode]);
 
@@ -179,24 +405,35 @@ const KnowledgeGraph: React.FC<KnowledgeGraphProps> = ({
     if (onNodeClick) {
       onNodeClick(node);
     }
-    if (graphRef.current) {
+    if (graphRef.current && 
+        typeof node.x === 'number' && typeof node.y === 'number' && typeof node.z === 'number' &&
+        isFinite(node.x) && isFinite(node.y) && isFinite(node.z)) {
       const distance = 120;
-      const distRatio = 1 + distance / Math.hypot(node.x, node.y, node.z);
-      graphRef.current.cameraPosition(
-        { x: node.x * distRatio, y: node.y * distRatio, z: node.z * distRatio },
-        node,
-        2000
-      );
+      const hypot = Math.hypot(node.x, node.y, node.z);
+      if (isFinite(hypot) && hypot !== 0) {
+        const distRatio = 1 + distance / hypot;
+        graphRef.current.cameraPosition(
+          { x: node.x * distRatio, y: node.y * distRatio, z: node.z * distRatio },
+          node,
+          2000
+        );
+      }
     }
   }, [onNodeClick]);
 
   const render3DNode = useCallback((node: any) => {
-    const sprite = new SpriteText(node.name);
-    sprite.color = node.color;
-    sprite.textHeight = 8;
-    sprite.backgroundColor = 'rgba(255,255,255,0.8)';
-    sprite.padding = 2;
-    sprite.borderRadius = 3;
+    const sprite = new SpriteText(node.name || '');
+    sprite.color = '#1e293b'; // 深色文字提高可读性
+    sprite.textHeight = 7;
+    sprite.backgroundColor = addAlpha(node.color || '#94a3b8', 0.85);
+    sprite.padding = 6;
+    sprite.borderRadius = 8;
+    sprite.borderColor = '#ffffff';
+    sprite.borderWidth = 1;
+    sprite.fontFace = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, sans-serif';
+    sprite.fontWeight = '600';
+    sprite.textAlign = 'center';
+    
     return sprite;
   }, []);
 
@@ -301,7 +538,7 @@ const KnowledgeGraph: React.FC<KnowledgeGraphProps> = ({
               nodeRelSize={6}
               linkDirectionalArrowLength={4}
               linkDirectionalArrowRelPos={1}
-              linkDirectionalArrowColor={() => '#666'}
+              linkDirectionalArrowColor={() => '#94a3b8'}
               linkCurvature={0.1}
               d3AlphaDecay={0.02}
               d3VelocityDecay={0.3}
@@ -314,17 +551,24 @@ const KnowledgeGraph: React.FC<KnowledgeGraphProps> = ({
               graphData={graphData}
               nodeThreeObject={render3DNode}
               onNodeClick={handleNodeClick3D}
-              nodeRelSize={6}
-              linkWidth={2}
-              linkOpacity={0.8}
-              linkColor={() => '#888888'}
-              linkDirectionalParticles={2}
-              linkDirectionalParticleWidth={1.5}
-              linkDirectionalParticleColor={() => '#007bff'}
-              d3AlphaDecay={0.02}
-              d3VelocityDecay={0.3}
-              warmupTicks={100}
-              cooldownTicks={100}
+              nodeRelSize={8}
+              linkWidth={link => link.type === 'Related' ? 1.5 : 2}
+              linkOpacity={0.7}
+              linkColor={link => {
+                const sourceColor = link.source.color || '#94a3b8';
+                const targetColor = link.target.color || '#cbd5e1';
+                return addAlpha(adjustColor(sourceColor, 20), 0.7);
+              }}
+              linkDirectionalParticles={3}
+              linkDirectionalParticleWidth={1.2}
+              linkDirectionalParticleColor={link => link.source.color || '#3b82f6'}
+              linkDirectionalParticleSpeed={0.005}
+              backgroundColor="#f8fafc"
+              showNavInfo={false}
+              d3AlphaDecay={0.025}
+              d3VelocityDecay={0.4}
+              warmupTicks={120}
+              cooldownTicks={120}
             />
           )
         ) : (
