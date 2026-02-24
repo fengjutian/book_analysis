@@ -202,7 +202,7 @@ electron.ipcMain.handle("export-markdown", async (_event, { id, fileName }) => {
   if (!markdown) {
     throw new Error(`Markdown with ID ${id} not found`);
   }
-  const { canceled, filePath } = await electron.dialog.showSaveDialog(win, {
+  const { canceled, filePath } = await electron.dialog.showSaveDialog(win || void 0, {
     defaultPath: fileName || `markdown-${id}.json`,
     filters: [
       { name: "JSON Files", extensions: ["json"] },
@@ -227,7 +227,7 @@ electron.ipcMain.handle("export-markdown", async (_event, { id, fileName }) => {
 });
 electron.ipcMain.handle("export-all-markdowns", async (_event, { fileName }) => {
   const markdowns = await getAllMarkdowns();
-  const { canceled, filePath } = await electron.dialog.showSaveDialog(win, {
+  const { canceled, filePath } = await electron.dialog.showSaveDialog(win || void 0, {
     defaultPath: fileName || "all-markdowns.json",
     filters: [
       { name: "JSON Files", extensions: ["json"] },

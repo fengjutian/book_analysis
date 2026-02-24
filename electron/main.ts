@@ -102,7 +102,7 @@ ipcMain.handle('export-markdown', async (_event, { id, fileName }) => {
     throw new Error(`Markdown with ID ${id} not found`);
   }
 
-  const { canceled, filePath } = await dialog.showSaveDialog(win!, {
+  const { canceled, filePath } = await dialog.showSaveDialog(win || undefined, {
     defaultPath: fileName || `markdown-${id}.json`,
     filters: [
       { name: 'JSON Files', extensions: ['json'] },
@@ -133,7 +133,7 @@ ipcMain.handle('export-markdown', async (_event, { id, fileName }) => {
 ipcMain.handle('export-all-markdowns', async (_event, { fileName }) => {
   const markdowns = await getAllMarkdowns();
 
-  const { canceled, filePath } = await dialog.showSaveDialog(win!, {
+  const { canceled, filePath } = await dialog.showSaveDialog(win || undefined, {
     defaultPath: fileName || 'all-markdowns.json',
     filters: [
       { name: 'JSON Files', extensions: ['json'] },

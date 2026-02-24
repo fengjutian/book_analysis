@@ -177,11 +177,52 @@ const Sidebar: React.FC<SidebarProps> = ({ onDocSelect }) => {
     }
   };
 
+  const handleExportDoc = async (doc: any, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!window.api) {
+      console.error('API not available');
+      return;
+    }
+
+    try {
+      const docId = doc.id.replace('doc-', '');
+      if (!isNaN(parseInt(docId))) {
+        const result = await window.api.exportMarkdown(parseInt(docId), `${doc.meta?.title || 'Untitled'}.json`);
+        if (result.success) {
+          console.log('Document exported successfully:', result.filePath);
+        } else {
+          console.log('Export canceled or failed:', result.message);
+        }
+      }
+    } catch (error) {
+      console.error('Failed to export document:', error);
+    }
+  };
+
+  const handleExportAll = async () => {
+    if (!window.api) {
+      console.error('API not available');
+      return;
+    }
+
+    try {
+      const result = await window.api.exportAllMarkdowns('all-documents.json');
+      if (result.success) {
+        console.log('All documents exported successfully:', result.filePath, 'count:', result.count);
+      } else {
+        console.log('Export canceled or failed:', result.message);
+      }
+    } catch (error) {
+      console.error('Failed to export all documents:', error);
+    }
+  };
+
   return (
     <div className="sidebar">
       <div className="header">
         {/* <div>All Docs</div> */}
         <button className="create-btn" onClick={createNewDoc}>+ New</button>
+        <button className="export-all-btn" onClick={handleExportAll} title="Export all documents">Export All</button>
       </div>
       <div className="doc-list">
         {docs.map(doc => (
@@ -202,6 +243,13 @@ const Sidebar: React.FC<SidebarProps> = ({ onDocSelect }) => {
             >
               {doc.meta?.title || 'Untitled'}
             </div>
+            <button 
+              className="export-btn"
+              onClick={(e) => handleExportDoc(doc, e)}
+              title="Export document"
+            >
+              ↓
+            </button>
             <button 
               className="delete-btn"
               onClick={(e) => deleteDoc(doc, e)}
