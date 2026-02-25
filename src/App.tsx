@@ -4,6 +4,7 @@ import Sidebar from './components/Sidebar';
 import TopBar from './components/TopBar';
 import EditorContainer from './components/EditorContainer';
 import KnowledgeGraph from './components/KnowledgeGraph';
+import FloatingButtons from './components/FloatingButtons';
 import './index.css';
 
 interface Markdown {
@@ -65,6 +66,7 @@ function App() {
           )}
         </div>
       </div>
+      <FloatingButtons />
     </EditorProvider>
   );
 }
