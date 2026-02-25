@@ -1,10 +1,6 @@
 import { useState, useEffect } from 'react';
 import { EditorProvider } from './components/EditorProvider';
-import Sidebar from './components/Sidebar';
-import TopBar from './components/TopBar';
-import EditorContainer from './components/EditorContainer';
-import KnowledgeGraph from './components/KnowledgeGraph';
-import FloatingButtons from './components/FloatingButtons';
+import AppSplitter from './components/AppSplitter';
 import './index.css';
 
 interface Markdown {
@@ -37,36 +33,13 @@ function App() {
 
   return (
     <EditorProvider>
-      <div className="app">
-        <Sidebar onDocSelect={setSelectedDocId} />
-        <div className="main-content">
-          <TopBar>
-            <div className="view-tabs">
-              <button
-                className={`tab-btn ${viewMode === 'editor' ? 'active' : ''}`}
-                onClick={() => setViewMode('editor')}
-              >
-                编辑器
-              </button>
-              <button
-                className={`tab-btn ${viewMode === 'graph' ? 'active' : ''}`}
-                onClick={() => setViewMode('graph')}
-              >
-                知识图谱
-              </button>
-            </div>
-          </TopBar>
-          {viewMode === 'editor' ? (
-            <EditorContainer />
-          ) : (
-            <KnowledgeGraph
-              markdowns={markdowns}
-              selectedDocId={selectedDocId}
-            />
-          )}
-        </div>
-      </div>
-      <FloatingButtons />
+      <AppSplitter
+        viewMode={viewMode}
+        setViewMode={setViewMode}
+        markdowns={markdowns}
+        selectedDocId={selectedDocId}
+        onDocSelect={setSelectedDocId}
+      />
     </EditorProvider>
   );
 }
