@@ -102,7 +102,7 @@ ipcMain.handle('export-markdown', async (_event, { id, fileName }) => {
     throw new Error(`Markdown with ID ${id} not found`);
   }
 
-  const { canceled, filePath } = await dialog.showSaveDialog(win || undefined, {
+  const { canceled, filePath } = await dialog.showSaveDialog(win as BrowserWindow, {
     defaultPath: fileName || `markdown-${id}.json`,
     filters: [
       { name: 'JSON Files', extensions: ['json'] },
@@ -123,7 +123,7 @@ ipcMain.handle('export-markdown', async (_event, { id, fileName }) => {
     };
     fs.writeFileSync(filePath, JSON.stringify(exportData, null, 2), 'utf8');
     return { success: true, filePath };
-  } catch (error) {
+  } catch (error: any) {
     console.error('Failed to export markdown:', error);
     throw new Error(`Failed to export markdown: ${error.message}`);
   }
@@ -133,7 +133,7 @@ ipcMain.handle('export-markdown', async (_event, { id, fileName }) => {
 ipcMain.handle('export-all-markdowns', async (_event, { fileName }) => {
   const markdowns = await getAllMarkdowns();
 
-  const { canceled, filePath } = await dialog.showSaveDialog(win || undefined, {
+  const { canceled, filePath } = await dialog.showSaveDialog(win as BrowserWindow, {
     defaultPath: fileName || 'all-markdowns.json',
     filters: [
       { name: 'JSON Files', extensions: ['json'] },
@@ -155,6 +155,6 @@ ipcMain.handle('export-all-markdowns', async (_event, { fileName }) => {
     return { success: true, filePath, count: markdowns.length };
   } catch (error) {
     console.error('Failed to export all markdowns:', error);
-    throw new Error(`Failed to export all markdowns: ${error.message}`);
+    throw new Error(`Failed to export all markdowns: ${error instanceof Error ? error.message : String(error)}`);
   }
 });

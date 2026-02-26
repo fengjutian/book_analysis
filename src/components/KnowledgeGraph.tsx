@@ -459,7 +459,7 @@ const KnowledgeGraph: React.FC<KnowledgeGraphProps> = ({
     sprite.borderWidth = 1;
     sprite.fontFace = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, sans-serif';
     sprite.fontWeight = '600';
-    sprite.textAlign = 'center';
+    (sprite as any).textAlign = 'center';
     
     return sprite;
   }, []);
@@ -585,7 +585,6 @@ const KnowledgeGraph: React.FC<KnowledgeGraphProps> = ({
               linkOpacity={0.7}
               linkColor={link => {
                 const sourceColor = link.source.color || '#94a3b8';
-                const targetColor = link.target.color || '#cbd5e1';
                 return addAlpha(adjustColor(sourceColor, 20), 0.7);
               }}
               linkDirectionalParticles={3}
